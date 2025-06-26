@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
+import { rejectAdjustment } from "@/services/requests";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, Plus, MessageSquare, MapPin, Calendar, Settings, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { collection, query, where, getDocs, updateDoc, deleteDoc, doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 import PriceAdjustmentNotification from "@/components/client/PriceAdjustmentNotification";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface PriceAdjustment {
   id: string;
@@ -24,6 +29,7 @@ interface PriceAdjustment {
 const ClientDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(()=>{
     if (!user) {
@@ -39,55 +45,101 @@ const ClientDashboard = () => {
     }
   }, [])
   
-  const [priceAdjustments, setPriceAdjustments] = useState<PriceAdjustment[]>([ // Fetch from database
-    {
-      id: "adj-1",
-      missionId: "mission-123",
-      providerName: "Pierre Martin",
-      serviceName: "Tonte de pelouse",
-      originalPrice: 65,
-      newPrice: 85,
-      justification: "Terrain en forte pente nécessitant un équipement spécialisé et plus de temps. La surface est également plus importante que prévu avec plusieurs obstacles (arbres, massifs).",
-      photos: ["photo1.jpg", "photo2.jpg"],
-      videos: ["video1.mp4"],
-      timestamp: new Date(Date.now() - 3600000), // 1h ago
-      status: 'pending'
-    },
-    {
-      id: "adj-2", 
-      missionId: "mission-124",
-      providerName: "Sophie Durand",
-      serviceName: "Montage de meuble",
-      originalPrice: 45,
-      newPrice: 60,
-      justification: "Meuble plus complexe que prévu avec de nombreuses pièces. Nécessite un outillage spécialisé pour les fixations murales.",
-      photos: ["photo3.jpg"],
-      videos: [],
-      timestamp: new Date(Date.now() - 7200000), // 2h ago
-      status: 'accepted'
-    }
-  ]);
+ const [priceAdjustments, setPriceAdjustments] = useState<PriceAdjustment[]>([]);
 
-  const handleAcceptAdjustment = (adjustmentId: string, feedback?: string) => {
-    setPriceAdjustments(prev =>
-      prev.map(adj =>
-        adj.id === adjustmentId
-          ? { ...adj, status: 'accepted' as const }
-          : adj
-      )
-    );
-    console.log('Adjustment accepted:', adjustmentId, 'Feedback:', feedback);
+  useEffect(() => {
+    const fetchAdjustments = async () => {
+      if (!user) return;
+      const adjustmentsArray: PriceAdjustment[] = [];
+      const reqQuery = query(collection(db, "requests"), where("clientId", "==", user.id));
+      const reqSnapshot = await getDocs(reqQuery);
+      for (const reqDoc of reqSnapshot.docs) {
+        const adjQuery = query(collection(db, "priceAdjustments"), where("missionId", "==", reqDoc.id));
+        const adjSnapshot = await getDocs(adjQuery);
+        adjSnapshot.forEach(adjDoc => {
+          const data = adjDoc.data() as any;
+          adjustmentsArray.push({
+            id: adjDoc.id,
+            missionId: data.missionId,
+            providerName: data.providerName,
+            serviceName: data.serviceName,
+            originalPrice: data.originalPrice,
+            newPrice: data.newPrice,
+            justification: data.justification,
+            photos: data.photos || [],
+            videos: data.videos || [],
+            timestamp: data.timestamp.toDate ? data.timestamp.toDate() : data.timestamp,
+            status: data.status
+          });
+        });
+      }
+      setPriceAdjustments(adjustmentsArray);
+    };
+    fetchAdjustments();
+  }, [user]);
+
+  const handleAcceptAdjustment = async (adjustmentId: string, feedback?: string) => {
+    try {
+      const adjRef = doc(db, "priceAdjustments", adjustmentId);
+      const adjSnap = await getDoc(adjRef);
+      if (!adjSnap.exists()) return;
+      const adjData = adjSnap.data();
+      const missionId = adjData.missionId;
+      const newPrice = adjData.newPrice;
+      const providerId = adjData.providerId;
+      const reqRef = doc(db, "requests", missionId);
+      await updateDoc(reqRef, {
+        status: "accepted",
+        acceptedProvider: providerId,
+        finalPrice: newPrice
+      });
+      const otherAdjQuery = query(
+        collection(db, "priceAdjustments"),
+        where("missionId", "==", missionId),
+        where("status", "==", "pending")
+      );
+      const otherAdjSnap = await getDocs(otherAdjQuery);
+      otherAdjSnap.forEach(async otherDoc => {
+        if (otherDoc.id !== adjustmentId) {
+          await deleteDoc(doc(db, "priceAdjustments", otherDoc.id));
+        }
+      });
+      setPriceAdjustments(prev =>
+        prev.map(adj =>
+          adj.id === adjustmentId ? { ...adj, status: 'accepted' as const } : adj
+        )
+      );
+      const response = await fetch("/api/checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: missionId, amount: newPrice })
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'acceptation de l'ajustement :", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'accepter l'ajustement, réessayez plus tard.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRejectAdjustment = (adjustmentId: string, reason: string) => {
-    setPriceAdjustments(prev =>
-      prev.map(adj =>
-        adj.id === adjustmentId
-          ? { ...adj, status: 'rejected' as const }
-          : adj
-      )
-    );
-    console.log('Adjustment rejected:', adjustmentId, 'Reason:', reason);
+  const handleRejectAdjustment = async (adjustmentId: string, reason: string) => {
+    try {
+      const adjRef = doc(db, "priceAdjustments", adjustmentId);
+      await updateDoc(adjRef, { status: "rejected" });
+      setPriceAdjustments(prev =>
+        prev.map(adj =>
+          adj.id === adjustmentId ? { ...adj, status: 'rejected' as const } : adj
+        )
+      );
+    } catch (error) {
+      console.error("Erreur lors du refus de l'ajustement :", error);
+    }
   };
 
   const pendingAdjustments = priceAdjustments.filter(adj => adj.status === 'pending');

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { createRequest } from "@/services/requests";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,9 @@ import { Leaf, ArrowLeft, Upload, Calculator, Clock, Zap, Crown, Euro } from "lu
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { collection, addDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/firebaseConfig";
 import LocationPicker from "@/components/client/LocationPicker";
 import ServiceSelector from "@/components/client/ServiceSelector";
 
@@ -122,27 +126,57 @@ const CreateRequest = () => {
     setFormData({ ...formData, photos: newPhotos });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.service || !formData.location.address || !formData.description) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const serviceBrand = formData.service.category === 'jardinage' ? 'GreenGoFrance' : 'GreenFix';
-
-    // Submit to Database
-    
-    toast({
-      title: "Demande créée avec succès !",
-      description: `Votre demande ${serviceBrand} a été envoyée. Vous recevrez une réponse sous ${formData.isExpress ? '3h' : '12h'}.`,
-    });
-    navigate('/client/my-requests');
+  const handleSubmit = async (e: React.FormEvent) => {
+   e.preventDefault();
+   
+   if (!formData.service || !formData.location.address || !formData.description) {
+     toast({
+       title: "Erreur",
+       description: "Veuillez remplir tous les champs obligatoires",
+       variant: "destructive",
+     });
+     return;
+   }
+   const serviceBrand = formData.service.category === 'jardinage' ? 'GreenGoFrance' : 'GreenFix';
+   try {
+     const docRef = await addDoc(collection(db, "requests"), {
+       clientId: user.id,
+       service: formData.service,
+       location: formData.location,
+       description: formData.description,
+       surface: formData.surface,
+       urgency: formData.urgency,
+       isExpress: formData.isExpress,
+       ecoOptions: formData.ecoOptions,
+       estimatedPrice: estimatedPrice,
+       status: "pending",
+       createdAt: new Date()
+     });
+     if (formData.photos.length > 0) {
+       const photoURLs: string[] = [];
+       for (const [index, photo] of formData.photos.entries()) {
+         const ext = photo.name.split('.').pop();
+         const photoRef = ref(storage, `requestPhotos/${docRef.id}/${index}.${ext}`);
+         await uploadBytes(photoRef, photo);
+         const url = await getDownloadURL(photoRef);
+         photoURLs.push(url);
+       }
+       await updateDoc(docRef, { photos: photoURLs });
+     }
+   } catch (error) {
+     console.error("Erreur création de demande :", error);
+     toast({
+       title: "Erreur",
+       description: "Impossible de créer la demande, réessayez plus tard.",
+       variant: "destructive",
+     });
+     return;
+   }
+   toast({
+     title: "Demande créée avec succès !",
+     description: `Votre demande ${serviceBrand} a été envoyée. Vous recevrez une réponse sous ${formData.isExpress ? '3h' : '12h'}.`,
+   });
+   navigate('/client/my-requests');
   };
 
   return (

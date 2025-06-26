@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { proposeAdjustment } from "@/services/requests";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,18 +83,6 @@ const PriceAdjustmentModal = ({
       });
       return;
     }
-
-    onSubmitAdjustment({
-      newPrice,
-      justification: justification.trim(),
-      photos,
-      videos
-    });
-
-    toast({
-      title: "Ajustement envoyé",
-      description: `Votre proposition de ${newPrice}€ a été envoyée à ${clientName}`,
-    });
 
     // Reset form
     setNewPrice(originalPrice);

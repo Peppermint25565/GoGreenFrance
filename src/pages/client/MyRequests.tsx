@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, ArrowLeft, MessageSquare, Star, Clock, CheckCircle, XCircle, Plus, Upload, AlertTriangle, Edit, Paperclip } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
+
 
 const MyRequests = () => {
   const { user, logout } = useAuth();
@@ -27,58 +30,23 @@ const MyRequests = () => {
     return null;
   }
 
-  const requests = [
-    {
-      id: 1,
-      service: "Tonte de pelouse",
-      type: "Jardinage",
-      status: "En cours",
-      provider: "Pierre Martin",
-      price: 65,
-      date: "2024-01-15",
-      address: "123 Rue de la Paix, Paris",
-      description: "Tonte de pelouse avec ramassage des déchets verts"
-    },
-    {
-      id: 2,
-      service: "Montage meuble IKEA",
-      type: "Bricolage",
-      status: "Terminé",
-      provider: "Sophie Durand",
-      price: 45,
-      date: "2024-01-10",
-      address: "456 Avenue des Fleurs, Lyon",
-      description: "Montage d'une bibliothèque IKEA Billy"
-    },
-    {
-      id: 3,
-      service: "Taille de haies",
-      type: "Jardinage",
-      status: "En attente",
-      provider: null,
-      price: 80,
-      date: "2024-01-20",
-      address: "789 Boulevard du Jardin, Marseille",
-      description: "Taille de haies de laurier sur 20 mètres"
-    },
-    {
-      id: 4,
-      service: "Réparation robinet",
-      type: "Bricolage",
-      status: "Annulé",
-      provider: null,
-      price: 35,
-      date: "2024-01-08",
-      address: "321 Rue de l'Eau, Toulouse",
-      description: "Réparation fuite robinet cuisine"
-    }
-  ];
+  const [requestsData, setRequestsData] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchRequests = async () => {
+      if (!user) return;
+      const reqQuery = query(collection(db, "requests"), where("clientId", "==", user.id));
+      const reqSnap = await getDocs(reqQuery);
+      setRequestsData(reqSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };
+    fetchRequests();
+  }, [user]);
+
 
   const filterOptions = ["Tous", "En attente", "En cours", "Terminé", "Annulé"];
 
-  const filteredRequests = selectedFilter === "Tous" 
-    ? requests 
-    : requests.filter(request => request.status === selectedFilter);
+  const filteredRequests = selectedFilter === "Tous"
+    ? requestsData
+    : requestsData.filter(request => request.status === selectedFilter);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -214,7 +182,7 @@ const MyRequests = () => {
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <CardTitle className="text-lg sm:text-xl">{request.service}</CardTitle>
+                        <CardTitle className="text-lg sm:text-xl">{request.service?.name}</CardTitle>
                         <Badge variant={request.type === "Jardinage" ? "default" : "secondary"}>
                           {request.type}
                         </Badge>
@@ -242,7 +210,7 @@ const MyRequests = () => {
                     {request.provider && (
                       <div>
                         <p className="text-sm text-gray-600 mb-1">Prestataire</p>
-                        <p className="font-medium">{request.provider}</p>
+                        <p className="font-medium">{request.provider || '-'}</p>
                       </div>
                     )}
                   </div>

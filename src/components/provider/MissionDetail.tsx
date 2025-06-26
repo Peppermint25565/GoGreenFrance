@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, Euro, User, Phone, MessageSquare, Navigation, CheckCircle, Settings } from "lucide-react";
 import PriceAdjustmentModal from "./PriceAdjustmentModal";
+import { collection, query, where, getDocs, addDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/firebaseConfig";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Mission {
   id: string;
@@ -47,6 +52,8 @@ interface MissionDetailProps {
 }
 
 const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: MissionDetailProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [currentStatus, setCurrentStatus] = useState<"available" | "accepted" | "in_progress" | "completed">(mission.status);
   const [showPriceAdjustment, setShowPriceAdjustment] = useState(false);
 
@@ -55,31 +62,71 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
     onUpdateStatus(mission.id, newStatus);
   };
 
-  const handlePriceAdjustment = (adjustment: {
+  const handlePriceAdjustment = async (adjustment: {
     newPrice: number;
     justification: string;
     photos: File[];
     videos: File[];
   }) => {
-    console.log('Price adjustment submitted:', {
-      missionId: mission.id,
-      ...adjustment
-    });
-    // Ici, on enverrait l'ajustement au backend et notifierait le client
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "available":
-        return <Badge variant="outline">Disponible</Badge>;
-      case "accepted":
-        return <Badge variant="default">Acceptée</Badge>;
-      case "in_progress":
-        return <Badge className="bg-blue-100 text-blue-800">En cours</Badge>;
-      case "completed":
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Terminée</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+    if (!user) return;
+    try {
+      const adjQuery = query(
+        collection(db, "priceAdjustments"),
+        where("missionId", "==", mission.id),
+        where("providerId", "==", user.id),
+        where("status", "==", "pending")
+      );
+      const adjSnap = await getDocs(adjQuery);
+      if (!adjSnap.empty) {
+        toast({
+          title: "Ajustement existant",
+          description: "Vous avez déjà une proposition en attente pour cette demande.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const adjRef = await addDoc(collection(db, "priceAdjustments"), {
+        missionId: mission.id,
+        providerId: user.id,
+        providerName: user.name,
+        serviceName: mission.title,
+        originalPrice: mission.payment.amount,
+        newPrice: adjustment.newPrice,
+        justification: adjustment.justification,
+        photos: [] as string[],
+        videos: [] as string[],
+        timestamp: new Date(),
+        status: "pending"
+      });
+      if (adjustment.photos.length > 0) {
+        const photoURLs: string[] = [];
+        for (const [index, photo] of adjustment.photos.entries()) {
+          const ext = photo.name.split('.').pop();
+          const photoRef = ref(storage, `adjustments/\${adjRef.id}/photo_\${index}.\${ext}`);
+          await uploadBytes(photoRef, photo);
+          const url = await getDownloadURL(photoRef);
+          photoURLs.push(url);
+        }
+        await updateDoc(adjRef, { photos: photoURLs });
+      }
+      if (adjustment.videos.length > 0) {
+        const videoURLs: string[] = [];
+        for (const [index, video] of adjustment.videos.entries()) {
+          const ext = video.name.split('.').pop();
+          const videoRef = ref(storage, `adjustments/\${adjRef.id}/video_\${index}.\${ext}`);
+          await uploadBytes(videoRef, video);
+          const url = await getDownloadURL(videoRef);
+          videoURLs.push(url);
+        }
+        await updateDoc(adjRef, { videos: videoURLs });
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de l'ajustement :", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'envoyer l'ajustement, réessayez plus tard.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -158,6 +205,20 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         return null;
     }
   };
+
+
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      planifiee: { variant: "outline" as const, label: "Planifiée" },
+      en_cours: { variant: "default" as const, label: "En cours" },
+      terminee: { variant: "secondary" as const, label: "Terminée" }
+    };
+    
+    const statusInfo = statusMap[status as keyof typeof statusMap] || { variant: "outline" as const, label: status };
+    
+    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+  };
+  
 
   return (
     <div className="space-y-6">
