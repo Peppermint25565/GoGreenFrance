@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,10 +16,20 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
+
+  useEffect(()=>{
+    if (!user) {
+      navigate("/login");
+      return null;
+    }
+    if (user.role === 0) {
+      navigate("/client/dashboard");
+    } else if (user.role === 1) {
+      navigate("/provider/dashboard")
+    } else {
+      navigate("/admin/dashboard")
+    }
+  }, [])
 
   const pendingProviders = [
     {
@@ -81,7 +91,7 @@ const AdminDashboard = () => {
             </Link>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <span className="text-sm sm:text-base text-gray-600">Admin: {user.name}</span>
-              <Button variant="outline" onClick={logout} size="sm">
+              <Button variant="outline" onClick={() => {logout(); navigate('/')}} size="sm">
                 Déconnexion
               </Button>
             </div>

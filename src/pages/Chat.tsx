@@ -59,7 +59,7 @@ const Chat = () => {
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600">Bonjour, {user.name}</span>
-              <Button variant="outline" onClick={logout}>
+              <Button variant="outline" onClick={() => {logout(); navigate('/')}}>
                 Déconnexion
               </Button>
             </div>

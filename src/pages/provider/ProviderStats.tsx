@@ -49,7 +49,7 @@ const ProviderStats = () => {
             </Link>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <span className="text-sm sm:text-base text-gray-600">Bonjour, {user.name}</span>
-              <Button variant="outline" onClick={logout} size="sm">
+              <Button variant="outline" onClick={() => {logout(); navigate('/')}} size="sm">
                 Déconnexion
               </Button>
             </div>

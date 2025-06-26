@@ -1,35 +1,38 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { uploadAvatar } from '@/utils/uploadToSupabase';
-import { addProfile, getRole, getAvatar, getName } from '../api/Profile'
-import { supabase } from '@/supabase';
-import { Session } from '@supabase/supabase-js';
+import { 
+  onAuthStateChanged, signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, signOut 
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, db, storage } from "@/firebaseConfig";  // Ajuster le chemin si besoin
 
 export type UserRole = 0 | 1 | 2;
-
 export interface User {
   id: string;
-  email: string;
+  email: string | null;
   name: string;
   role: UserRole;
   avatar?: string;
 }
-
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, role: UserRole, avatarFile?: File | null) => Promise<void>;
-  logout: () => void;
+  register: (
+    email: string, 
+    password: string, 
+    name: string, 
+    role: UserRole, 
+    avatarFile?: File | null
+  ) => Promise<void>;
+  logout: () => Promise<void>;
   loading: boolean;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth doit être utilisé dans AuthProvider');
   return context;
 };
 
@@ -38,41 +41,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(
     cached ? JSON.parse(cached) : null
   );
-  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true);
 
+  // Surveille les changements d'auth (connexion / déconnexion)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setLoading(false)
-    })
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_ev, newSession) => {
-      setSession(newSession)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Récupérer le profil Firestore
+        const docRef = doc(db, "profiles", firebaseUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const currentUser: User = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: data.name,
+            role: data.role as UserRole,
+            avatar: data.avatar || undefined,
+          };
+          setUser(currentUser);
+          localStorage.setItem("user", JSON.stringify(currentUser));
+        }
+      } else {
+        setUser(null);
+        localStorage.removeItem("user");
+      }
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
 
+  // Fonction de connexion
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
-      setUser({
-        id: data.user.id,
-        email: data.user.email,
-        name: await getName(data.user.email),
-        role: await getRole(data.user.email),
-        avatar: await getAvatar(data.user.email),
-      } as User);
-      if (error) throw error
+      // Authentification Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      // Récupération du profil Firestore
+      const docRef = doc(db, "profiles", firebaseUser.uid);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) throw new Error("Profil introuvable.");
+      const data = docSnap.data();
+      const currentUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: data.name,
+        role: data.role as UserRole,
+        avatar: data.avatar || undefined,
+      };
+      setUser(currentUser);
+      localStorage.setItem("user", JSON.stringify(currentUser));
     } catch (error) {
-      throw new Error('Login failed');
+      console.error("Erreur login :", error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  // Fonction d'inscription
   const register = async (
     email: string,
     password: string,
@@ -82,31 +110,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     setLoading(true);
     try {
-      const { error, data } = await supabase.auth.signUp({ email, password })
-      console.log(error)
-      if (error) throw error
-      let photoURL: string | undefined = undefined;
+      // Création de l'utilisateur Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      let photoURL: string = "";
 
+      // Upload de l'avatar si fourni
       if (avatarFile) {
-        photoURL = await uploadAvatar(data.user.id, avatarFile);
+        const ext = avatarFile.name.split('.').pop();
+        const fileRef = ref(storage, `avatars/${firebaseUser.uid}.${ext}`);
+        await uploadBytes(fileRef, avatarFile);
+        photoURL = await getDownloadURL(fileRef);
       }
-      await addProfile({uuid: data.user.id, avatar: photoURL, name: name, role: role as number});
-      setUser({
-        id: data.user.id,
-        email: email,
+
+      // Création du profil dans Firestore
+      await setDoc(doc(db, "profiles", firebaseUser.uid), {
         name: name,
-        role,
+        email: email,
+        role: role,
         avatar: photoURL,
-      } as User);
+      });
+
+      const newUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: name,
+        role: role,
+        avatar: photoURL,
+      };
+      setUser(newUser);
+      localStorage.setItem("user", JSON.stringify(newUser));
+    } catch (error) {
+      console.error("Erreur inscription :", error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  // Fonction de déconnexion
   const logout = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    localStorage.removeItem('user');
+    await auth.signOut();
+    localStorage.removeItem("user");
+    setUser(null);
   };
 
   return (

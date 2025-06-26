@@ -54,7 +54,7 @@ const ClientStats = () => {
             </Link>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               <span className="text-sm sm:text-base text-muted-foreground">Bonjour, {user.name}</span>
-              <Button variant="outline" onClick={logout} size="sm">
+              <Button variant="outline" onClick={() => {logout(); navigate('/')}} size="sm">
                 Déconnexion
               </Button>
             </div>

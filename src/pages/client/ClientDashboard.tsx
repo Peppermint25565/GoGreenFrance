@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, Plus, MessageSquare, MapPin, Calendar, Settings, Bell } from "lucide-react";
@@ -24,8 +24,21 @@ interface PriceAdjustment {
 const ClientDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(()=>{
+    if (!user) {
+      navigate("/login");
+      return null;
+    }
+    if (user.role === 0) {
+      navigate("/client/dashboard");
+    } else if (user.role === 1) {
+      navigate("/provider/dashboard")
+    } else {
+      navigate("/admin/dashboard")
+    }
+  }, [])
   
-  // Mock data pour les ajustements tarifaires
   const [priceAdjustments, setPriceAdjustments] = useState<PriceAdjustment[]>([ // Fetch from database
     {
       id: "adj-1",
@@ -77,11 +90,6 @@ const ClientDashboard = () => {
     console.log('Adjustment rejected:', adjustmentId, 'Reason:', reason);
   };
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
   const pendingAdjustments = priceAdjustments.filter(adj => adj.status === 'pending');
 
   return (
@@ -112,7 +120,7 @@ const ClientDashboard = () => {
                   </div>
                 )}
               </div>
-              <Button variant="outline" onClick={logout}>
+              <Button variant="outline" onClick={() => {logout(); navigate('/')}}>
                 Déconnexion
               </Button>
             </div>
