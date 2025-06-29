@@ -17,19 +17,19 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
 
-  useEffect(()=>{
-    if (!user) {
-      navigate("/login");
-      return null;
-    }
-    if (user.role === 0) {
-      navigate("/client/dashboard");
-    } else if (user.role === 1) {
-      navigate("/provider/dashboard")
-    } else {
-      navigate("/admin/dashboard")
-    }
-  }, [])
+  // useEffect(()=>{
+  //   if (!user) {
+  //     navigate("/login");
+  //     return null;
+  //   }
+  //   if (user.role === 0) {
+  //     navigate("/client/dashboard");
+  //   } else if (user.role === 1) {
+  //     navigate("/provider/dashboard")
+  //   } else {
+  //     navigate("/admin/dashboard")
+  //   }
+  // }, [])
 
   const pendingProviders = [
     {
@@ -86,9 +86,12 @@ const AdminDashboard = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <Link to="/" className="flex items-center space-x-2">
-              <Leaf className="h-8 w-8 text-green-600" />
-              <span className="text-xl sm:text-2xl font-bold text-gray-900">🛠 Interface Admin</span>
-            </Link>
+                <img 
+                  src="/lovable-uploads/93345a67-4688-418b-8793-ad045f122f8d.png" 
+                  alt="GreenGo France" 
+                  className="h-28 w-auto" 
+                />
+              </Link>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <span className="text-sm sm:text-base text-gray-600">Admin: {user.name}</span>
               <Button variant="outline" onClick={() => {logout(); navigate('/')}} size="sm">

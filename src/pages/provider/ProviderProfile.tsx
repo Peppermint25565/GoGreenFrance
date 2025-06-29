@@ -75,9 +75,12 @@ const ProviderProfile = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-2">
-              <Leaf className="h-8 w-8 text-green-600" />
-              <span className="text-2xl font-bold text-gray-900">ServicePro</span>
+          <Link to="/" className="flex items-center space-x-2">
+              <img 
+                src="/lovable-uploads/93345a67-4688-418b-8793-ad045f122f8d.png" 
+                alt="GreenGo France" 
+                className="h-28 w-auto" 
+              />
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600">Bonjour, {user.name}</span>
