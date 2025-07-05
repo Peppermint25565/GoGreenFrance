@@ -115,7 +115,7 @@ const MyRequests = () => {
        );
        const snap = await getDocs(q);
        setRequestsData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-       console.log(requestsData);
+       console.log(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
      };
  
      fetchRequests();
@@ -218,8 +218,8 @@ const MyRequests = () => {
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3 mb-2">
                         <CardTitle className="text-lg sm:text-xl">{request.service?.name}</CardTitle>
-                        <Badge variant={request.type === "Jardinage" ? "default" : "secondary"}>
-                          {request.type}
+                        <Badge variant={request.service?.category === "jardinage" ? "default" : "secondary"}>
+                          {request.service?.category}
                         </Badge>
                         <Badge variant={getStatusColor(request.status)}>
                           {getStatusIcon(request.status)}
@@ -231,8 +231,8 @@ const MyRequests = () => {
                       </CardDescription>
                     </div>
                     <div className="text-left sm:text-right">
-                      <div className="text-xl sm:text-2xl font-bold text-green-600">{request.price}€</div>
-                      <div className="text-sm text-gray-500">{request.date}</div>
+                      <div className="text-xl sm:text-2xl font-bold text-green-600">{request.estimatedPrice}€</div>
+                      <div className="text-sm text-gray-500">{new Date(request.createdAt?.seconds * 1000 + request.createdAt?.nanoseconds / 1e6).toISOString()}</div>
                     </div>
                   </div>
                 </CardHeader>
@@ -240,7 +240,7 @@ const MyRequests = () => {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Adresse</p>
-                      <p className="font-medium">{request.address}</p>
+                      <p className="font-medium">{request.location.address}</p>
                     </div>
                     {request.provider && (
                       <div>
