@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Leaf, Wrench, Clock, Shield, MessageSquare, CreditCard, Star, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import fond from "./WhatsApp Image 2025-06-29 at 01.26.04 (1).jpeg"
 
 const Index = () => {
   return (
@@ -32,6 +33,9 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
+      <section className="relative w-full h-screen overflow-hidden">
+        <img src={fond} alt="" className="container mx-auto text-center"/>
+      </section>
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">

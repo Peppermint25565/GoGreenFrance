@@ -3,7 +3,7 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, signOut 
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/firebaseConfig";  // Ajuster le chemin si besoin
 
@@ -27,6 +27,10 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
+  changeAvatar: (
+    uid: string,
+    avatarFile?: File | null
+  ) => Promise<void>;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -148,6 +152,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const changeAvatar = async (
+    uid: string,
+    avatarFile?: File | null
+  ) => {
+    setLoading(true);
+    try {
+      let photoURL: string = "";
+
+      if (avatarFile) {
+        const ext = avatarFile.name.split('.').pop();
+        const fileRef = ref(storage, `avatars/${uid}.${ext}`);
+        await uploadBytes(fileRef, avatarFile);
+        photoURL = await getDownloadURL(fileRef);
+      }
+
+      await updateDoc(
+        doc(db, "profiles", uid),
+        { avatar: photoURL }
+);
+    } catch (error) {
+      console.error("Erreur inscription :", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fonction de déconnexion
   const logout = async () => {
     await auth.signOut();
@@ -156,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, changeAvatar }}>
       {children}
     </AuthContext.Provider>
   );

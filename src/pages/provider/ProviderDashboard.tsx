@@ -11,7 +11,6 @@ import {
   Award, TrendingUp
 } from "lucide-react";
 import KYCVerification from "@/components/provider/KYCVerification";
-import TrainingCenter from "@/components/provider/TrainingCenter";
 import MissionDetail from "@/components/provider/MissionDetail";
 import EarningsTracker from "@/components/provider/EarningsTracker";
 
@@ -273,10 +272,9 @@ const ProviderDashboard = () => {
         </div>
 
         <Tabs defaultValue="missions" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsList className="grid grid-cols-4 w-full max-w-2xl">
             <TabsTrigger value="missions">Missions</TabsTrigger>
             <TabsTrigger value="kyc">Vérification</TabsTrigger>
-            <TabsTrigger value="training">Formation</TabsTrigger>
             <TabsTrigger value="earnings">Revenus</TabsTrigger>
             <TabsTrigger value="performance">Stats</TabsTrigger>
           </TabsList>
@@ -489,10 +487,6 @@ const ProviderDashboard = () => {
 
           <TabsContent value="kyc">
             <KYCVerification />
-          </TabsContent>
-
-          <TabsContent value="training">
-            <TrainingCenter />
           </TabsContent>
 
           <TabsContent value="earnings">

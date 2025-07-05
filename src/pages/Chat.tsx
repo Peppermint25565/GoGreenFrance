@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Leaf, ArrowLeft, MessageCircle } from "lucide-react";
+import { Leaf, ArrowLeft, MessageCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ChatList from "@/components/chat/ChatList";
@@ -59,6 +59,12 @@ const Chat = () => {
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600">Bonjour, {user.name}</span>
+              <Link to="/client/profile">
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  Profil
+                </Button>
+              </Link>
               <Button variant="outline" onClick={() => {logout(); navigate('/')}}>
                 Déconnexion
               </Button>

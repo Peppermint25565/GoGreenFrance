@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { Leaf, ArrowLeft, TrendingUp, Calendar, Euro, Star, BarChart3, Users } from "lucide-react";
+import { Leaf, ArrowLeft, TrendingUp, Calendar, Euro, Star, BarChart3, Users, User } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line } from "recharts";
 
@@ -52,6 +52,12 @@ const ProviderStats = () => {
              </Link>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <span className="text-sm sm:text-base text-gray-600">Bonjour, {user.name}</span>
+              <Link to="/client/profile">
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  Profil
+                </Button>
+              </Link>
               <Button variant="outline" onClick={() => {logout(); navigate('/')}} size="sm">
                 Déconnexion
               </Button>

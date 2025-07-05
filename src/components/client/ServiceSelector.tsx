@@ -247,10 +247,6 @@ const ServiceSelector = ({ onServiceSelect, selectedService }: ServiceSelectorPr
     return false;
   });
 
-  console.log('Selected category:', selectedCategory);
-  console.log('Selected subcategory:', selectedSubCategory);
-  console.log('Filtered services:', filteredServices);
-
   return (
     <div className="space-y-6">
       {/* Sélection de catégorie */}

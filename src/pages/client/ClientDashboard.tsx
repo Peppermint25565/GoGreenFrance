@@ -2,15 +2,14 @@ import { useEffect, useState } from "react";
 import { rejectAdjustment } from "@/services/requests";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { Leaf, Plus, MessageSquare, MapPin, Calendar, Settings, Bell } from "lucide-react";
+import { Leaf, Plus, MessageSquare, MapPin, Calendar, Settings, Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { collection, query, where, getDocs, updateDoc, deleteDoc, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, deleteDoc, doc, getDoc, limit, orderBy } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import PriceAdjustmentNotification from "@/components/client/PriceAdjustmentNotification";
 import { useToast } from "@/hooks/use-toast";
-
 
 interface PriceAdjustment {
   id: string;
@@ -30,6 +29,10 @@ const ClientDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [activeRequestsCount, setActiveRequestsCount] = useState(0);
+  const [completedServicesCount, setCompletedServicesCount] = useState(0);
+  const [averageRating, setAverageRating] = useState<number | string>("–");
+  const [recentRequests, setRecentRequests] = useState<any[]>([]);
 
   useEffect(()=>{
     if (!user) {
@@ -44,6 +47,60 @@ const ClientDashboard = () => {
       navigate("/admin/dashboard")
     }
   }, [])
+   useEffect(() => {
+     if (!user) return;
+ 
+     const fetchData = async () => {
+       /* 1.  Toutes les requêtes du client */
+       const reqQuery = query(
+         collection(db, "requests"),
+         where("clientId", "==", user.id)
+       );
+       const reqSnap = await getDocs(reqQuery);
+ 
+       /* 2.  Compter les statuts                */
+       let active = 0;
+       let completed = 0;
+       let sumRatings = 0;
+       let rated = 0;
+ 
+       reqSnap.forEach((d) => {
+         const data = d.data();
+         switch (data.status) {
+           case "pending":
+           case "accepted":
+           case "in_progress":
+             active += 1;
+             break;
+           case "completed":
+             completed += 1;
+             if (typeof data.rating === "number") {
+               sumRatings += data.rating;
+               rated += 1;
+             }
+             break;
+           default:
+             break;
+         }
+       });
+ 
+       /* 3.  Dernières demandes (limite 4)      */
+       const recentQuery = query(
+         collection(db, "requests"),
+         where("clientId", "==", user.id),
+         orderBy("createdAt", "desc"),
+         limit(4)
+       );
+       const recentSnap = await getDocs(recentQuery);
+ 
+       setActiveRequestsCount(active);
+       setCompletedServicesCount(completed);
+       setAverageRating(rated ? (sumRatings / rated).toFixed(1) : "–");
+       setRecentRequests(recentSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+     };
+ 
+     fetchData();
+   }, [user]);
   
  const [priceAdjustments, setPriceAdjustments] = useState<PriceAdjustment[]>([]);
 
@@ -172,6 +229,12 @@ const ClientDashboard = () => {
                   </div>
                 )}
               </div>
+              <Link to="/client/profile">
+                  <Button variant="outline" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    Profil
+                  </Button>
+                </Link>
               <Button variant="outline" onClick={() => {logout(); navigate('/')}}>
                 Déconnexion
               </Button>
@@ -248,7 +311,7 @@ const ClientDashboard = () => {
                 <CardTitle className="text-lg">Demandes actives</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600 mb-2">3</div>
+                <div className="text-3xl font-bold text-green-600 mb-2">{activeRequestsCount}</div>
                 <p className="text-sm text-gray-600">En cours de traitement</p>
               </CardContent>
             </Card>
@@ -258,7 +321,7 @@ const ClientDashboard = () => {
                 <CardTitle className="text-lg">Services terminés</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-600 mb-2">12</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">{completedServicesCount}</div>
                 <p className="text-sm text-gray-600">Ce mois-ci</p>
               </CardContent>
             </Card>
@@ -268,7 +331,9 @@ const ClientDashboard = () => {
                 <CardTitle className="text-lg">Note moyenne</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-600 mb-2">4.8/5</div>
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {averageRating !== "–" ? `${averageRating}/5` : "–"}
+                </div>
                 <p className="text-sm text-gray-600">Satisfaction prestataires</p>
               </CardContent>
             </Card>
@@ -284,56 +349,33 @@ const ClientDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[
-                  {
-                    id: 1,
-                    service: "Tonte de pelouse",
-                    provider: "Pierre Martin",
-                    status: "En cours",
-                    location: "Lyon 3e",
-                    date: "Aujourd'hui 14h"
-                  },
-                  {
-                    id: 2,
-                    service: "Montage de meuble",
-                    provider: "Sophie Durand", 
-                    status: "Acceptée",
-                    location: "Lyon 6e",
-                    date: "18 Jan 16h"
-                  },
-                  {
-                    id: 3,
-                    service: "Jardinage",
-                    provider: "En attente",
-                    status: "Recherche",
-                    location: "Villeurbanne",
-                    date: "20 Jan 10h"
-                  }
-                ].map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <h4 className="font-medium">{request.service}</h4>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <span>{request.provider}</span>
-                          <span>•</span>
-                          <MapPin className="h-3 w-3" />
-                          <span>{request.location}</span>
-                          <span>•</span>
-                          <span>{request.date}</span>
+                {recentRequests.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    Aucune demande récente.
+                  </p>
+                ) : (
+                  <ul className="space-y-4">
+                    {recentRequests.map((req) => (
+                      <li
+                        key={req.id}
+                        className="border rounded-lg p-4 shadow-sm bg-background/40"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-medium">{req.service?.name || "Service"}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Créée&nbsp;:{" "}
+                              {new Date(req.createdAt?.seconds ? req.createdAt.seconds * 1000 : req.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <span className="text-sm font-semibold">
+                            {req.status === "completed" ? "Terminé" : "En cours"}
+                          </span>
                         </div>
-                      </div>
-                    </div>
-                    <Badge 
-                      variant={
-                        request.status === "En cours" ? "default" :
-                        request.status === "Acceptée" ? "secondary" : "outline"
-                      }
-                    >
-                      {request.status}
-                    </Badge>
-                  </div>
-                ))}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { Leaf, ArrowLeft, TrendingUp, Calendar, Euro, Star, BarChart3, PieChart } from "lucide-react";
+import { Leaf, ArrowLeft, TrendingUp, Calendar, Euro, Star, BarChart3, PieChart, User } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart as RechartsPieChart, Cell } from "recharts";
 
@@ -57,6 +57,12 @@ const ClientStats = () => {
             </Link>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               <span className="text-sm sm:text-base text-muted-foreground">Bonjour, {user.name}</span>
+              <Link to="/client/profile">
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  Profil
+                </Button>
+              </Link>
               <Button variant="outline" onClick={() => {logout(); navigate('/')}} size="sm">
                 Déconnexion
               </Button>

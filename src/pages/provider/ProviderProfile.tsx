@@ -8,11 +8,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { Leaf, ArrowLeft, Upload, Save } from "lucide-react";
+import { User, Wrench, Upload, Camera, ArrowLeft, Save } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 
 const ProviderProfile = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, changeAvatar } = useAuth();
   const navigate = useNavigate();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+      changeAvatar(user.id, avatarFile);
+    }
+  };
+
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -110,6 +123,35 @@ const ProviderProfile = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                              <div className="space-y-2">
+                <Label>Photo de profil (optionnel)</Label>
+                <div className="flex flex-col items-center space-y-4">
+                  <Avatar className="h-24 w-24 flex flex-col items-center justify-center space-y-2 rounded-full border border-[rgb(223, 223, 223)]">
+                    <AvatarImage src={avatarPreview || ""} />
+                    <AvatarFallback className="text-lg">
+                      {user.name ? user.name.substring(0, 2).toUpperCase() : <Camera className="h-8 w-8" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                      id="avatar-upload"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choisir une photo
+                    </Button>
+                  </div>
+                </div>
+              </div>
                 {/* Personal Info */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>

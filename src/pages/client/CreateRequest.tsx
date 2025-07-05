@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Leaf, ArrowLeft, Upload, Calculator, Clock, Zap, Crown, Euro } from "lucide-react";
+import { Leaf, ArrowLeft, Upload, Calculator, Clock, Zap, Crown, Euro, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -194,6 +194,12 @@ const CreateRequest = () => {
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600">Bonjour, {user.name}</span>
+              <Link to="/client/profile">
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  Profil
+                </Button>
+              </Link>
               <Button variant="outline" onClick={() => {logout(); navigate('/')}}>
                 Déconnexion
               </Button>

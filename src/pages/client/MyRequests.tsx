@@ -8,9 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { Leaf, ArrowLeft, MessageSquare, Star, Clock, CheckCircle, XCircle, Plus, Upload, AlertTriangle, Edit, Paperclip } from "lucide-react";
+import { Leaf, ArrowLeft, MessageSquare, Star, Clock, CheckCircle, XCircle, Plus, Upload, AlertTriangle, Edit, Paperclip, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 
 
@@ -31,22 +31,8 @@ const MyRequests = () => {
   }
 
   const [requestsData, setRequestsData] = useState<any[]>([]);
-  useEffect(() => {
-    const fetchRequests = async () => {
-      if (!user) return;
-      const reqQuery = query(collection(db, "requests"), where("clientId", "==", user.id));
-      const reqSnap = await getDocs(reqQuery);
-      setRequestsData(reqSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    fetchRequests();
-  }, [user]);
-
 
   const filterOptions = ["Tous", "En attente", "En cours", "Terminé", "Annulé"];
-
-  const filteredRequests = selectedFilter === "Tous"
-    ? requestsData
-    : requestsData.filter(request => request.status === selectedFilter);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -117,6 +103,42 @@ const MyRequests = () => {
     setAttachments(newAttachments);
   };
 
+
+   useEffect(() => {
+     if (!user) return;
+ 
+     const fetchRequests = async () => {
+       const q = query(
+         collection(db, "requests"),
+         where("clientId", "==", user.id),
+         orderBy("createdAt", "desc")
+       );
+       const snap = await getDocs(q);
+       setRequestsData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+       console.log(requestsData);
+     };
+ 
+     fetchRequests();
+   }, [user]);
+
+   const filteredRequests =
+     selectedFilter === "Tous"
+       ? requestsData
+       : requestsData.filter((r) => {
+           switch (selectedFilter) {
+             case "En attente":
+               return r.status === "pending";
+             case "En cours":
+               return r.status === "in_progress" || r.status === "accepted";
+             case "Terminé":
+               return r.status === "completed";
+             case "Annulé":
+               return r.status === "cancelled";
+             default:
+               return true;
+           }
+         });
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -132,6 +154,12 @@ const MyRequests = () => {
               </Link>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600">Bonjour, {user.name}</span>
+              <Link to="/client/profile">
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  Profil
+                </Button>
+              </Link>
               <Button variant="outline" onClick={() => {logout(); navigate('/')}}>
                 Déconnexion
               </Button>
@@ -162,18 +190,22 @@ const MyRequests = () => {
           {/* Filters */}
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <div className="flex flex-wrap gap-2">
-                {filterOptions.map((filter) => (
-                  <Button 
-                    key={filter}
-                    variant={selectedFilter === filter ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedFilter(filter)}
+              <div className="mb-6 flex gap-3 overflow-x-auto">
+                {filterOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setSelectedFilter(opt)}
+                    className={`px-4 py-2 rounded-full text-sm border ${
+                      selectedFilter === opt
+                        ? "bg-primary text-white"
+                        : "bg-background hover:bg-muted"
+                    }`}
                   >
-                    {filter}
-                  </Button>
+                    {opt}
+                  </button>
                 ))}
               </div>
+
             </CardContent>
           </Card>
 

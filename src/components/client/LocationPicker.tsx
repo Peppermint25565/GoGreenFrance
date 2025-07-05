@@ -178,6 +178,32 @@ const LocationPicker = ({ onLocationSelect, initialAddress = "" }: LocationPicke
             )}
           </Button>
 
+        {(coordinates || address) && (address ? (
+            <div className="mt-4">
+              <iframe
+                title="map"
+                width="100%"
+                height="250"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="rounded-lg border"
+                src={`https://www.google.com/maps?q=${address}&hl=fr&z=14&output=embed`}
+              />
+            </div>
+          ) : (
+            <div className="mt-4">
+              <iframe
+                title="map"
+                width="100%"
+                height="250"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="rounded-lg border"
+                src={`https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}&hl=fr&z=14&output=embed`}
+              />
+            </div>
+          ))}
+
           {address.trim() && (
             <Button
               type="button"

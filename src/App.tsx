@@ -20,6 +20,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Chat from "./pages/Chat";
 import TermsOfService from "./pages/TermsOfService";
+import ClientProfile from "./pages/client/ClientProfile";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/client/dashboard" element={<ClientDashboard />} />
+            <Route path="/client/profile" element={<ClientProfile />} />
             <Route path="/client/create-request" element={<CreateRequest />} />
             <Route path="/client/my-requests" element={<MyRequests />} />
             <Route path="/client/stats" element={<ClientStats />} />
