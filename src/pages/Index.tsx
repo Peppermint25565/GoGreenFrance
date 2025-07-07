@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Leaf, Wrench, Clock, Shield, MessageSquare, CreditCard, Star, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import fond from "./WhatsApp Image 2025-06-29 at 01.26.04 (1).jpeg"
+import fond from "/WhatsApp Image 2025-07-05 at 23.46.09.jpeg"
 
 const Index = () => {
   return (
@@ -15,7 +15,7 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <img 
-                src="/lovable-uploads/93345a67-4688-418b-8793-ad045f122f8d.png" 
+                src="/lovable-uploads/logo.png" 
                 alt="GreenGo France" 
                 className="h-32 w-auto" 
               />
@@ -33,9 +33,7 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative w-full h-screen overflow-hidden">
-        <img src={fond} alt="" className="container mx-auto text-center"/>
-      </section>
+      <img src={fond} style={{width: "100%"}}/>
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
@@ -203,7 +201,7 @@ const Index = () => {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <img 
-                  src="/lovable-uploads/93345a67-4688-418b-8793-ad045f122f8d.png" 
+                  src="/lovable-uploads/logo.png" 
                   alt="GreenGo France" 
                   className="h-24 w-auto filter brightness-0 invert" 
                 />

@@ -26,7 +26,7 @@ interface PriceAdjustment {
 }
 
 const ClientDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, fetchClientDashboard } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeRequestsCount, setActiveRequestsCount] = useState(0);
@@ -51,14 +51,8 @@ const ClientDashboard = () => {
      if (!user) return;
  
      const fetchData = async () => {
-       /* 1.  Toutes les requêtes du client */
-       const reqQuery = query(
-         collection(db, "requests"),
-         where("clientId", "==", user.id)
-       );
-       const reqSnap = await getDocs(reqQuery);
+       const reqSnap = await fetchClientDashboard(user.id);
  
-       /* 2.  Compter les statuts                */
        let active = 0;
        let completed = 0;
        let sumRatings = 0;
@@ -209,7 +203,7 @@ const ClientDashboard = () => {
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-2">
               <img 
-                src="/lovable-uploads/93345a67-4688-418b-8793-ad045f122f8d.png" 
+                src="/lovable-uploads/logo.png" 
                 alt="GreenGo France" 
                 className="h-28 w-auto" 
               />

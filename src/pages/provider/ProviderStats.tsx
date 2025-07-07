@@ -45,7 +45,7 @@ const ProviderStats = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
            <Link to="/" className="flex items-center space-x-2">
                <img 
-                 src="/lovable-uploads/93345a67-4688-418b-8793-ad045f122f8d.png" 
+                 src="/lovable-uploads/logo.png" 
                  alt="GreenGo France" 
                  className="h-28 w-auto" 
                />

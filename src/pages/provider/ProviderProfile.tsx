@@ -10,12 +10,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Wrench, Upload, Camera, ArrowLeft, Save } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { db, storage } from '@/firebaseConfig';
+import { doc, setDoc }   from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useToast } from "@/hooks/use-toast";
+import { profile } from "console";
 
 const ProviderProfile = () => {
-  const { user, logout, changeAvatar } = useAuth();
+  const { user, logout, changeAvatar, updateProviderProfile } = useAuth();
   const navigate = useNavigate();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -52,10 +58,15 @@ const ProviderProfile = () => {
     return null;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Profile updated:', profileData);
-    // Here would be the API call to update the profile
+    try {
+      await updateProviderProfile(avatarFile, profileData);
+      navigate('/provider/dashboard');
+    } catch (err) {
+      console.error(err);
+      alert('Une erreur est survenue, réessayez.');
+    }
   };
 
   const handleSpecializationChange = (specialization: string, checked: boolean) => {
@@ -90,7 +101,7 @@ const ProviderProfile = () => {
           <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
               <img 
-                src="/lovable-uploads/93345a67-4688-418b-8793-ad045f122f8d.png" 
+                src="/lovable-uploads/logo.png" 
                 alt="GreenGo France" 
                 className="h-28 w-auto" 
               />

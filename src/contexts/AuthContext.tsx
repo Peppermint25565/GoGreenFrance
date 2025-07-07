@@ -3,7 +3,7 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, signOut 
 } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, DocumentData, getDoc, getDocs, query, QuerySnapshot, setDoc, updateDoc, where } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/firebaseConfig";  // Ajuster le chemin si besoin
 
@@ -31,6 +31,13 @@ interface AuthContextType {
     uid: string,
     avatarFile?: File | null
   ) => Promise<void>;
+  updateProviderProfile: (
+    avatarFile: File,
+    profileData: any
+  ) => Promise<void>;
+  fetchClientDashboard: (
+    userId: string
+  ) => Promise<QuerySnapshot<DocumentData, DocumentData>>;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -179,6 +186,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProviderProfile = async (
+    avatarFile: File,
+    profileData: any
+  ) => {
+    const storageRef = ref(storage, `avatars/${user.id}`);
+    await uploadBytes(storageRef, avatarFile);
+    let photoURL = await getDownloadURL(storageRef);
+    const dataToSave = {
+      ...profileData,
+      photoURL,
+      updatedAt: Date.now(),
+    };
+
+    await setDoc(doc(db, 'profiles', user.id), dataToSave, { merge: true });
+  }
+
+  const fetchClientDashboard = async (
+    userId: string
+  ) => {
+    const reqQuery = query(
+      collection(db, "requests"),
+      where("clientId", "==", userId)
+    );
+    return await getDocs(reqQuery);
+  }
+
   // Fonction de déconnexion
   const logout = async () => {
     await auth.signOut();
@@ -187,7 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading, changeAvatar }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, changeAvatar, updateProviderProfile, fetchClientDashboard }}>
       {children}
     </AuthContext.Provider>
   );
