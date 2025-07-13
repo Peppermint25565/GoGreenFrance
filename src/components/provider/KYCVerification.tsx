@@ -13,29 +13,17 @@ interface KYCStep {
   title: string;
   description: string;
   status: "pending" | "completed" | "rejected" | "in_review";
+  doesNeedFileInput: boolean;
   required: boolean;
 }
 
 const KYCVerification = () => {
   const [kycSteps, setKycSteps] = useState<KYCStep[]>([
     {
-      id: "email",
-      title: "Vérification email",
-      description: "Confirmez votre adresse email",
-      status: "completed",
-      required: true
-    },
-    {
-      id: "phone",
-      title: "Vérification téléphone",
-      description: "Confirmez votre numéro de téléphone",
-      status: "completed",
-      required: true
-    },
-    {
       id: "identity",
       title: "Pièce d'identité",
       description: "Carte d'identité ou passeport",
+      doesNeedFileInput: true,
       status: "in_review",
       required: true
     },
@@ -43,6 +31,7 @@ const KYCVerification = () => {
       id: "address",
       title: "Justificatif de domicile",
       description: "Facture de moins de 3 mois",
+      doesNeedFileInput: true,
       status: "pending",
       required: true
     },
@@ -50,6 +39,7 @@ const KYCVerification = () => {
       id: "insurance",
       title: "Assurance responsabilité civile",
       description: "Attestation d'assurance professionnelle",
+      doesNeedFileInput: true,
       status: "pending",
       required: true
     },
@@ -57,6 +47,7 @@ const KYCVerification = () => {
       id: "bank",
       title: "RIB",
       description: "Relevé d'identité bancaire pour les paiements",
+      doesNeedFileInput: true,
       status: "pending",
       required: true
     }
@@ -120,7 +111,7 @@ const KYCVerification = () => {
               {getStatusBadge(step.status)}
             </div>
             
-            {step.status === "pending" && (
+            {step.status === "pending" && step.doesNeedFileInput && (
               <div className="space-y-3">
                 <div className="grid w-full max-w-sm items-center gap-1.5">
                   <Label htmlFor={`file-${step.id}`}>Télécharger le document</Label>

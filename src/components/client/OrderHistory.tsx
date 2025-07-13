@@ -1,18 +1,22 @@
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Download, Eye, Search, Star, Euro, Clock } from "lucide-react";
+import { db } from "@/firebaseConfig";
+import { collection, getDocs, orderBy, query, Timestamp } from "firebase/firestore";
+import { Interface } from "readline";
 
 interface Order {
   id: string;
-  service: string;
-  provider: string;
-  date: string;
-  amount: number;
+  service: {category: string};
+  provider?: string | "";
+  createdAt: Timestamp;
+  estimatedPrice: number;
+  price?: number;
   status: "completed" | "cancelled" | "in_progress";
   rating?: number;
   invoiceUrl?: string;
@@ -24,75 +28,81 @@ interface OrderHistoryProps {
   onRateProvider: (orderId: string) => void;
 }
 
+function useOrders() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const q = query(collection(db, "requests"), orderBy("createdAt", "desc"));
+        const snap = await getDocs(q);
+        const parsed = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Order, "id">) }));
+        setOrders(parsed);
+      } catch (err) {
+        console.error("Erreur lors du chargement des commandes", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  return { orders, loading };
+}
+
 const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: OrderHistoryProps) => {
+  const { orders } = useOrders();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
 
-  const orders: Order[] = [
-    {
-      id: "CMD-001",
-      service: "Tonte de pelouse",
-      provider: "Pierre Martin",
-      date: "2024-01-15",
-      amount: 65,
-      status: "completed",
-      rating: 5,
-      invoiceUrl: "#"
-    },
-    {
-      id: "CMD-002",
-      service: "Montage meuble IKEA",
-      provider: "Sophie Durand",
-      date: "2024-01-10",
-      amount: 45,
-      status: "completed",
-      rating: 4,
-      invoiceUrl: "#"
-    },
-    {
-      id: "CMD-003",
-      service: "Taille de haies",
-      provider: "Marc Dubois",
-      date: "2024-01-08",
-      amount: 120,
-      status: "completed",
-      invoiceUrl: "#"
-    },
-    {
-      id: "CMD-004",
-      service: "Réparation robinet",
-      provider: "Julie Moreau",
-      date: "2024-01-05",
-      amount: 80,
-      status: "in_progress"
-    }
-  ];
+    const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const matchesSearch =
+        order.service.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    
-    const matchesDate = dateFilter === "all" || (() => {
-      const orderDate = new Date(order.date);
-      const now = new Date();
-      const daysDiff = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      switch (dateFilter) {
-        case "week": return daysDiff <= 7;
-        case "month": return daysDiff <= 30;
-        case "year": return daysDiff <= 365;
-        default: return true;
-      }
-    })();
-    
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
 
-  const getStatusBadge = (status: string) => {
+      const matchesDate =
+        dateFilter === "all" ||
+        (() => {
+          const orderDate = order.createdAt.toDate();
+          const now = new Date();
+          const daysDiff = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
+
+          switch (dateFilter) {
+            case "week":
+              return daysDiff <= 7;
+            case "month":
+              return daysDiff <= 30;
+            case "year":
+              return daysDiff <= 365;
+            default:
+              return true;
+          }
+        })();
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [orders, searchTerm, statusFilter, dateFilter]);
+
+  const stats = useMemo(() => {
+    const completed = orders.filter((o) => o.status === "completed");
+    const totalSpent = completed.reduce((sum, o) => sum + (o.price ? o.price : o.estimatedPrice), 0);
+    const rated = completed.filter((o) => o.rating !== undefined);
+    const avgRating =
+      rated.length === 0 ? null : rated.reduce((s, o) => s + (o.rating ?? 0), 0) / rated.length;
+
+    return {
+      totalSpent,
+      completedCount: completed.length,
+      avgRating,
+    };
+  }, [orders]);
+
+  const getStatusBadge = (status: Order["status"]) => {
     switch (status) {
       case "completed":
         return <Badge className="bg-green-100 text-green-800">Terminée</Badge>;
@@ -105,17 +115,13 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+  const formatDate = (ts: Timestamp) => {
+    return ts.toDate().toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
   };
-
-  const totalSpent = filteredOrders
-    .filter(order => order.status === "completed")
-    .reduce((sum, order) => sum + order.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -126,7 +132,7 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total dépensé</p>
-                <p className="text-2xl font-bold text-green-600">{totalSpent}€</p>
+                <p className="text-2xl font-bold text-green-600">{stats.totalSpent}€</p>
               </div>
               <Euro className="h-8 w-8 text-green-600" />
             </div>
@@ -138,7 +144,7 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Missions terminées</p>
-                <p className="text-2xl font-bold">{orders.filter(o => o.status === "completed").length}</p>
+                <p className="text-2xl font-bold">{stats.completedCount}</p>
               </div>
               <Clock className="h-8 w-8 text-blue-600" />
             </div>
@@ -150,7 +156,7 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Note moyenne</p>
-                <p className="text-2xl font-bold">4.7/5</p>
+                <p className="text-2xl font-bold">{stats.avgRating ? stats.avgRating : "-"} / 5</p>
               </div>
               <Star className="h-8 w-8 text-yellow-500" />
             </div>
@@ -207,16 +213,16 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-medium">{order.service}</h3>
+                      <h3 className="font-medium">{order.service.category}</h3>
                       {getStatusBadge(order.status)}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
                       <span>Réf: {order.id}</span>
-                      <span>Prestataire: {order.provider}</span>
-                      <span>Date: {formatDate(order.date)}</span>
+                      {order.provider && (<span>Prestataire: {order.provider}</span>)}
+                      <span>Date: {order.createdAt.toDate().toDateString()}</span>
                     </div>
                     <div className="flex items-center gap-4 mt-2">
-                      <span className="font-semibold text-green-600">{order.amount}€</span>
+                      <span className="font-semibold text-green-600">{order.price ? order.price : order.estimatedPrice}€</span>
                       {order.rating && (
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -224,27 +230,6 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
                         </div>
                       )}
                     </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => onViewDetails(order.id)}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      Détails
-                    </Button>
-                    
-                    {order.invoiceUrl && (
-                      <Button variant="outline" size="sm" onClick={() => onDownloadInvoice(order.id)}>
-                        <Download className="h-4 w-4 mr-1" />
-                        Facture
-                      </Button>
-                    )}
-                    
-                    {order.status === "completed" && !order.rating && (
-                      <Button size="sm" onClick={() => onRateProvider(order.id)}>
-                        <Star className="h-4 w-4 mr-1" />
-                        Noter
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>

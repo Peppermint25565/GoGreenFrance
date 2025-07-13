@@ -17,33 +17,33 @@ interface Mission {
   description: string;
   client: {
     name: string;
-    avatar: string;
+    avatar?: string;
     phone: string;
     rating: number;
   };
   location: {
     address: string;
-    distance: string;
-    coordinates: { lat: number; lng: number };
+    distance?: string;
+    coordinates?: { lat: number; lng: number };
   };
   schedule: {
-    date: string;
+    date: string; // ISO date (YYYY-MM-DD)
     timeSlot: string;
-    estimatedDuration: string;
+    estimatedDuration?: string;
   };
-  payment: {
+  payment?: {
     amount: number;
     currency: string;
     paymentMethod: string;
-    minPrice: number;
-    maxPrice: number;
   };
-  requirements: string[];
-  tools: string[];
-  status: "available" | "accepted" | "in_progress" | "completed";
-  acceptDeadline: string;
+  requirements?: string[];
+  tools?: string[];
+  status: "available" | "accepted" | "in_progress" | "completed" | "cancelled";
+  acceptDeadline?: string;
+  urgency?: "low" | "medium" | "high";
+  category: string;
+  providerId?: string; // null when available
 }
-
 interface MissionDetailProps {
   mission: Mission;
   onAccept: (missionId: string) => void;
@@ -54,7 +54,7 @@ interface MissionDetailProps {
 const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: MissionDetailProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [currentStatus, setCurrentStatus] = useState<"available" | "accepted" | "in_progress" | "completed">(mission.status);
+  const [currentStatus, setCurrentStatus] = useState<"available" | "accepted" | "in_progress" | "completed" | "cancelled">(mission.status);
   const [showPriceAdjustment, setShowPriceAdjustment] = useState(false);
 
   const handleStatusUpdate = (newStatus: "available" | "accepted" | "in_progress" | "completed") => {
@@ -174,14 +174,6 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
       case "in_progress":
         return (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" size="sm">
-                Arrivé sur place
-              </Button>
-              <Button variant="outline" size="sm">
-                Travail commencé
-              </Button>
-            </div>
             <Button 
               onClick={() => handleStatusUpdate("completed")} 
               className="w-full"
@@ -264,18 +256,11 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
             </div>
             <div>
               <h3 className="font-medium">{mission.client.name}</h3>
-              <p className="text-sm text-gray-600">
-                ⭐ {mission.client.rating}/5 • Client vérifié
-              </p>
             </div>
           </div>
           
           {currentStatus !== "available" && (
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Phone className="h-4 w-4 mr-2" />
-                Appeler
-              </Button>
               <Button variant="outline" size="sm">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Chat
@@ -298,45 +283,34 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
           <p className="text-sm text-gray-600 mb-4">
             Distance : {mission.location.distance}
           </p>
-          
-          <div className="bg-gray-100 rounded-lg h-32 flex items-center justify-center mb-4">
-            <p className="text-gray-500">Carte interactive</p>
+          <div className="bg-gray-100 rounded-lg h-1000 flex items-center justify-center mb-4">
+            {(mission.location.coordinates || mission.location.address) && (mission.location.address ? (
+                <iframe
+                  title="map"
+                  width="100%"
+                  height="500px"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="rounded-lg border"
+                  src={`https://www.google.com/maps?q=${mission.location.address}&hl=fr&z=14&output=embed`}
+                />
+            ) : (
+                <iframe
+                  title="map"
+                  width="100%"
+                  height="500px"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="rounded-lg border"
+                  src={`https://www.google.com/maps?q=${mission.location.coordinates.lat},${mission.location.coordinates.lng}&hl=fr&z=14&output=embed`}
+                />
+            ))}
           </div>
-          
-          <Button variant="outline" className="w-full">
-            <Navigation className="h-4 w-4 mr-2" />
-            Itinéraire GPS
-          </Button>
         </CardContent>
       </Card>
 
       {/* Horaires et paiement */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Horaires
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div>
-                <span className="text-sm text-gray-600">Date :</span>
-                <p className="font-medium">{mission.schedule.date}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Créneau :</span>
-                <p className="font-medium">{mission.schedule.timeSlot}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Durée estimée :</span>
-                <p className="font-medium">{mission.schedule.estimatedDuration}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid md:grid-cols-1 gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -353,7 +327,7 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
                 Paiement automatique après validation
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Fourchette: {mission.payment.minPrice}€ - {mission.payment.maxPrice}€
+                Fourchette: {mission.payment.amount}€ - {mission.payment.maxPrice}€
               </p>
             </div>
             <Badge variant="outline" className="w-full justify-center">
@@ -362,38 +336,9 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
           </CardContent>
         </Card>
       </div>
-
-      {/* Outils et exigences */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Détails techniques</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h4 className="font-medium mb-2">Outils requis :</h4>
-            <div className="flex flex-wrap gap-2">
-              {mission.tools.map((tool, index) => (
-                <Badge key={index} variant="outline">{tool}</Badge>
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <h4 className="font-medium mb-2">Exigences spéciales :</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-              {mission.requirements.map((req, index) => (
-                <li key={index}>{req}</li>
-              ))}
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Actions */}
       <Card>
-        <CardContent className="p-6">
           {renderMissionActions()}
-        </CardContent>
       </Card>
 
       {/* Modal d'ajustement tarifaire */}

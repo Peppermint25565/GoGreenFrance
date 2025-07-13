@@ -110,14 +110,6 @@ const OrderHistoryPage = () => {
           />
         </div>
       </div>
-
-      <RatingModal
-        isOpen={ratingModal.isOpen}
-        onClose={() => setRatingModal(prev => ({ ...prev, isOpen: false }))}
-        providerName={ratingModal.providerName}
-        serviceName={ratingModal.serviceName}
-        onSubmitRating={handleSubmitRating}
-      />
     </div>
   );
 };

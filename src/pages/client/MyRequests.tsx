@@ -22,8 +22,6 @@ const MyRequests = () => {
   const [selectedFilter, setSelectedFilter] = useState("Tous");
   const [rating, setRating] = useState(0);
   const [ratingComment, setRatingComment] = useState("");
-  const [reportReason, setReportReason] = useState("");
-  const [attachments, setAttachments] = useState<File[]>([]);
 
   if (!user) {
     navigate("/login");
@@ -75,34 +73,6 @@ const MyRequests = () => {
     setRating(0);
     setRatingComment("");
   };
-
-  const handleReport = (requestId: number) => {
-    if (!reportReason.trim()) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez indiquer la raison du signalement",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Signalement envoyé",
-      description: "Votre signalement a été transmis à notre équipe",
-    });
-    setReportReason("");
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    setAttachments([...attachments, ...files]);
-  };
-
-  const removeAttachment = (index: number) => {
-    const newAttachments = attachments.filter((_, i) => i !== index);
-    setAttachments(newAttachments);
-  };
-
 
    useEffect(() => {
      if (!user) return;
@@ -311,132 +281,6 @@ const MyRequests = () => {
                           </DialogContent>
                         </Dialog>
                       )}
-                      
-                      {/* Attach Files Button */}
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Paperclip className="h-4 w-4 mr-2" />
-                            Joindre
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Joindre des fichiers</DialogTitle>
-                            <DialogDescription>
-                              Ajoutez des photos ou documents liés à votre demande
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                              <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                              <p className="text-gray-600 mb-2">Glissez vos fichiers ici ou cliquez pour les sélectionner</p>
-                              <input
-                                type="file"
-                                multiple
-                                accept="image/*,.pdf,.doc,.docx"
-                                onChange={handleFileUpload}
-                                className="hidden"
-                                id="file-upload"
-                              />
-                              <Button type="button" variant="outline" onClick={() => document.getElementById('file-upload')?.click()}>
-                                Choisir des fichiers
-                              </Button>
-                            </div>
-                            {attachments.length > 0 && (
-                              <div className="space-y-2">
-                                <Label>Fichiers joints :</Label>
-                                {attachments.map((file, index) => (
-                                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                    <span className="text-sm">{file.name}</span>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => removeAttachment(index)}
-                                    >
-                                      <XCircle className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            <Button className="w-full">
-                              Envoyer les fichiers
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      {(request.status === "En attente" || request.status === "En cours") && (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Edit className="h-4 w-4 mr-2" />
-                              Modifier
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Modifier la demande</DialogTitle>
-                              <DialogDescription>
-                                Modifiez les détails de votre demande
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label htmlFor="edit-description">Description</Label>
-                                <Textarea
-                                  id="edit-description"
-                                  defaultValue={request.description}
-                                  className="mt-1"
-                                />
-                              </div>
-                              <Button className="w-full">
-                                Enregistrer les modifications
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                      
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <AlertTriangle className="h-4 w-4 mr-2" />
-                            Signaler
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Signaler un problème</DialogTitle>
-                            <DialogDescription>
-                              Décrivez le problème rencontré avec cette demande
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="report-reason">Raison du signalement</Label>
-                              <Textarea
-                                id="report-reason"
-                                value={reportReason}
-                                onChange={(e) => setReportReason(e.target.value)}
-                                placeholder="Décrivez le problème..."
-                                className="mt-1"
-                              />
-                            </div>
-                            <Button onClick={() => handleReport(request.id)} className="w-full">
-                              Envoyer le signalement
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <Button variant="ghost" size="sm">
-                        Détails
-                      </Button>
                     </div>
                   </div>
                 </CardContent>

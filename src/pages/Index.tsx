@@ -37,7 +37,7 @@ const Index = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Trouvez votre prestataire en 
+            Intervention garantie en 
             <span className="text-green-600"> 3h à 12h</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
