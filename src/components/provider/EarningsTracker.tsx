@@ -3,79 +3,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Euro, TrendingUp, Calendar, Clock, Award } from "lucide-react";
-
-interface Earning {
-  id: string;
-  missionTitle: string;
-  date: string;
-  amount: number;
-  status: "paid" | "pending" | "processing";
-  client: string;
-  duration: string;
-}
-
-interface Performance {
-  period: string;
-  totalEarnings: number;
-  missionsCompleted: number;
-  averageRating: number;
-  efficiency: number;
-}
+import { Request } from "@/types/requests";
+import { useEffect, useState } from "react";
+import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
+import { useAuth } from "@/contexts/AuthContext";
 
 const EarningsTracker = () => {
-  const recentEarnings: Earning[] = [
-    {
-      id: "1",
-      missionTitle: "Tonte de pelouse",
-      date: "2024-01-18",
-      amount: 65,
-      status: "paid",
-      client: "Marie D.",
-      duration: "2h30"
-    },
-    {
-      id: "2",
-      missionTitle: "Élagage arbres",
-      date: "2024-01-17",
-      amount: 120,
-      status: "pending",
-      client: "Jean L.",
-      duration: "4h00"
-    },
-    {
-      id: "3",
-      missionTitle: "Ramassage déchets",
-      date: "2024-01-16",
-      amount: 45,
-      status: "paid",
-      client: "Paul R.",
-      duration: "1h30"
-    }
-  ];
+  const { user } = useAuth();
+  const [recentEarnings, setRecentEarnings] = useState<Request[]>([]);
+  const [totalEarned, setTotalEarned] = useState<number>(0);
+  const [countRequests, setCountRequests] = useState<number>(0);
+  const [avgEarn, setAvgEarning] = useState<number>(0);
 
-  const performances: Performance[] = [
-    {
-      period: "Cette semaine",
-      totalEarnings: 340,
-      missionsCompleted: 5,
-      averageRating: 4.8,
-      efficiency: 92
-    },
-    {
-      period: "Ce mois",
-      totalEarnings: 1250,
-      missionsCompleted: 18,
-      averageRating: 4.7,
-      efficiency: 89
-    },
-    {
-      period: "Cette année",
-      totalEarnings: 12400,
-      missionsCompleted: 156,
-      averageRating: 4.6,
-      efficiency: 87
+  useEffect(() => {
+    const func = async () => {
+      const q = query(
+        collection(db, "requests"),
+        where("providerId", "==", user.id),
+        where("status", "==", "completed"),
+        orderBy("createdAt", "desc")
+      );
+      const snap = await getDocs(q);
+      const array = snap.docs.map((d) => ({ id: d.id, ...d.data() as Request}));
+      setRecentEarnings(array);
+      setCountRequests(array.length)
+      let total = 0;
+      array.forEach(req => {
+        total += req.priceFinal ? req.priceFinal : req.priceOriginal
+      });
+      setTotalEarned(total)
+      setAvgEarning(total / array.length)
     }
-  ];
+    func()
+  }, [])
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -100,7 +61,7 @@ const EarningsTracker = () => {
               <Euro className="h-5 w-5 text-green-600" />
               <span className="text-sm text-gray-600">Total gagné</span>
             </div>
-            <div className="text-2xl font-bold text-green-600">1,250€</div>
+            <div className="text-2xl font-bold text-green-600">{totalEarned} €</div>
             <p className="text-xs text-gray-500">Ce mois</p>
           </CardContent>
         </Card>
@@ -111,7 +72,7 @@ const EarningsTracker = () => {
               <Calendar className="h-5 w-5 text-blue-600" />
               <span className="text-sm text-gray-600">Missions</span>
             </div>
-            <div className="text-2xl font-bold">18</div>
+            <div className="text-2xl font-bold">{countRequests}</div>
             <p className="text-xs text-gray-500">Complétées ce mois</p>
           </CardContent>
         </Card>
@@ -122,7 +83,7 @@ const EarningsTracker = () => {
               <Award className="h-5 w-5 text-yellow-600" />
               <span className="text-sm text-gray-600">Revenu Moyen</span>
             </div>
-            <div className="text-2xl text-yellow-600 font-bold">1,200 €</div>
+            <div className="text-2xl text-yellow-600 font-bold">{avgEarn} €</div>
             <p className="text-xs text-gray-500">Par missions</p>
           </CardContent>
         </Card>
@@ -141,18 +102,14 @@ const EarningsTracker = () => {
               <div key={earning.id} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h4 className="font-medium">{earning.missionTitle}</h4>
+                    <h4 className="font-medium">{earning.title}</h4>
                     <p className="text-sm text-gray-600">
-                      {earning.client} • {earning.date}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      <Clock className="h-3 w-3 inline mr-1" />
-                      Durée : {earning.duration}
+                      {earning.clientName} • {earning.createdAt.toDate().toDateString()}
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="text-xl font-bold text-green-600 mb-2">
-                      {earning.amount}€
+                      {earning.priceFinal ? earning.priceFinal : earning.priceOriginal}€
                     </div>
                     {getStatusBadge(earning.status)}
                   </div>

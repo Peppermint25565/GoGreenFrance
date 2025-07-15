@@ -9,18 +9,7 @@ import { Calendar, Download, Eye, Search, Star, Euro, Clock } from "lucide-react
 import { db } from "@/firebaseConfig";
 import { collection, getDocs, orderBy, query, Timestamp } from "firebase/firestore";
 import { Interface } from "readline";
-
-interface Order {
-  id: string;
-  service: {category: string};
-  provider?: string | "";
-  createdAt: Timestamp;
-  estimatedPrice: number;
-  price?: number;
-  status: "completed" | "cancelled" | "in_progress";
-  rating?: number;
-  invoiceUrl?: string;
-}
+import { Request } from "@/types/requests";
 
 interface OrderHistoryProps {
   onViewDetails: (orderId: string) => void;
@@ -29,7 +18,7 @@ interface OrderHistoryProps {
 }
 
 function useOrders() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +26,7 @@ function useOrders() {
       try {
         const q = query(collection(db, "requests"), orderBy("createdAt", "desc"));
         const snap = await getDocs(q);
-        const parsed = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Order, "id">) }));
+        const parsed = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Request, "id">) }));
         setOrders(parsed);
       } catch (err) {
         console.error("Erreur lors du chargement des commandes", err);
@@ -59,8 +48,8 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
     const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       const matchesSearch =
-        order.service.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.providerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.id.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = statusFilter === "all" || order.status === statusFilter;
@@ -90,7 +79,7 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
 
   const stats = useMemo(() => {
     const completed = orders.filter((o) => o.status === "completed");
-    const totalSpent = completed.reduce((sum, o) => sum + (o.price ? o.price : o.estimatedPrice), 0);
+    const totalSpent = completed.reduce((sum, o) => sum + (o.priceFinal ? o.priceFinal : o.priceOriginal), 0);
     const rated = completed.filter((o) => o.rating !== undefined);
     const avgRating =
       rated.length === 0 ? null : rated.reduce((s, o) => s + (o.rating ?? 0), 0) / rated.length;
@@ -102,7 +91,7 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
     };
   }, [orders]);
 
-  const getStatusBadge = (status: Order["status"]) => {
+  const getStatusBadge = (status: Request["status"]) => {
     switch (status) {
       case "completed":
         return <Badge className="bg-green-100 text-green-800">Terminée</Badge>;
@@ -213,16 +202,16 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: Orde
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-medium">{order.service.category}</h3>
+                      <h3 className="font-medium">{order.category}</h3>
                       {getStatusBadge(order.status)}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
                       <span>Réf: {order.id}</span>
-                      {order.provider && (<span>Prestataire: {order.provider}</span>)}
+                      {order.providerName && (<span>Prestataire: {order.providerName}</span>)}
                       <span>Date: {order.createdAt.toDate().toDateString()}</span>
                     </div>
                     <div className="flex items-center gap-4 mt-2">
-                      <span className="font-semibold text-green-600">{order.price ? order.price : order.estimatedPrice}€</span>
+                      <span className="font-semibold text-green-600">{order.priceFinal ? order.priceFinal : order.priceOriginal}€</span>
                       {order.rating && (
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />

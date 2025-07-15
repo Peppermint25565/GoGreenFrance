@@ -85,7 +85,6 @@ const MyRequests = () => {
        );
        const snap = await getDocs(q);
        setRequestsData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-       console.log(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
      };
  
      fetchRequests();
@@ -187,9 +186,9 @@ const MyRequests = () => {
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <CardTitle className="text-lg sm:text-xl">{request.service?.name}</CardTitle>
-                        <Badge variant={request.service?.category === "jardinage" ? "default" : "secondary"}>
-                          {request.service?.category}
+                        <CardTitle className="text-lg sm:text-xl">{request.title}</CardTitle>
+                        <Badge variant={request.category === "jardinage" ? "default" : "secondary"}>
+                          {request.category}
                         </Badge>
                         <Badge variant={getStatusColor(request.status)}>
                           {getStatusIcon(request.status)}
@@ -201,7 +200,7 @@ const MyRequests = () => {
                       </CardDescription>
                     </div>
                     <div className="text-left sm:text-right">
-                      <div className="text-xl sm:text-2xl font-bold text-green-600">{request.estimatedPrice}€</div>
+                      <div className="text-xl sm:text-2xl font-bold text-green-600">{request.priceOriginal}€</div>
                       <div className="text-sm text-gray-500">{new Date(request.createdAt?.seconds * 1000 + request.createdAt?.nanoseconds / 1e6).toISOString()}</div>
                     </div>
                   </div>
@@ -212,10 +211,10 @@ const MyRequests = () => {
                       <p className="text-sm text-gray-600 mb-1">Adresse</p>
                       <p className="font-medium">{request.location.address}</p>
                     </div>
-                    {request.provider && (
+                    {request.providerName && (
                       <div>
                         <p className="text-sm text-gray-600 mb-1">Prestataire</p>
-                        <p className="font-medium">{request.provider || '-'}</p>
+                        <p className="font-medium">{request.providerName || '-'}</p>
                       </div>
                     )}
                   </div>
@@ -242,7 +241,7 @@ const MyRequests = () => {
                             <DialogHeader>
                               <DialogTitle>Évaluer le service</DialogTitle>
                               <DialogDescription>
-                                Donnez votre avis sur la prestation de {request.provider}
+                                Donnez votre avis sur la prestation de {request.providerName}
                               </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">

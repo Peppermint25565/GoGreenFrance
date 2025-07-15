@@ -10,20 +10,7 @@ import { collection, query, where, getDocs, updateDoc, deleteDoc, doc, getDoc, l
 import { db } from "@/firebaseConfig";
 import PriceAdjustmentNotification from "@/components/client/PriceAdjustmentNotification";
 import { useToast } from "@/hooks/use-toast";
-
-interface PriceAdjustment {
-  id: string;
-  missionId: string;
-  providerName: string;
-  serviceName: string;
-  originalPrice: number;
-  newPrice: number;
-  justification: string;
-  photos: string[];
-  videos: string[];
-  timestamp: Date;
-  status: 'pending' | 'accepted' | 'rejected';
-}
+import { PriceAdjustment } from "@/types/requests";
 
 const ClientDashboard = () => {
   const { user, logout, fetchClientDashboard } = useAuth();
@@ -105,65 +92,45 @@ const ClientDashboard = () => {
       const reqQuery = query(collection(db, "requests"), where("clientId", "==", user.id));
       const reqSnapshot = await getDocs(reqQuery);
       for (const reqDoc of reqSnapshot.docs) {
-        const adjQuery = query(collection(db, "priceAdjustments"), where("missionId", "==", reqDoc.id));
+        const adjQuery = query(collection(db, "priceAdjustments"), where("requestId", "==", reqDoc.id));
         const adjSnapshot = await getDocs(adjQuery);
-        adjSnapshot.forEach(adjDoc => {
-          const data = adjDoc.data() as any;
-          adjustmentsArray.push({
-            id: adjDoc.id,
-            missionId: data.missionId,
-            providerName: data.providerName,
-            serviceName: data.serviceName,
-            originalPrice: data.originalPrice,
-            newPrice: data.newPrice,
-            justification: data.justification,
-            photos: data.photos || [],
-            videos: data.videos || [],
-            timestamp: data.timestamp.toDate ? data.timestamp.toDate() : data.timestamp,
-            status: data.status
-          });
-        });
+        adjSnapshot.forEach(adjDoc => {adjDoc.data() as PriceAdjustment});
       }
       setPriceAdjustments(adjustmentsArray);
     };
     fetchAdjustments();
   }, [user]);
 
-  const handleAcceptAdjustment = async (adjustmentId: string, feedback?: string) => {
+  const handleAcceptAdjustment = async (adjustment: PriceAdjustment, feedback?: string) => {
     try {
-      const adjRef = doc(db, "priceAdjustments", adjustmentId);
-      const adjSnap = await getDoc(adjRef);
-      if (!adjSnap.exists()) return;
-      const adjData = adjSnap.data();
-      const missionId = adjData.missionId;
-      const newPrice = adjData.newPrice;
-      const providerId = adjData.providerId;
-      const reqRef = doc(db, "requests", missionId);
+      const reqRef = doc(db, "requests", adjustment.requestId);
       await updateDoc(reqRef, {
+        providerId: adjustment.providerId,
+        providerName: adjustment.providerName,
         status: "accepted",
-        acceptedProvider: providerId,
-        finalPrice: newPrice
-      });
+        priceFinal: adjustment.newPrice
+      })
+
       const otherAdjQuery = query(
         collection(db, "priceAdjustments"),
-        where("missionId", "==", missionId),
+        where("requestId", "==", adjustment.requestId),
         where("status", "==", "pending")
       );
       const otherAdjSnap = await getDocs(otherAdjQuery);
       otherAdjSnap.forEach(async otherDoc => {
-        if (otherDoc.id !== adjustmentId) {
+        if (otherDoc.id !== adjustment.id) {
           await deleteDoc(doc(db, "priceAdjustments", otherDoc.id));
         }
       });
       setPriceAdjustments(prev =>
         prev.map(adj =>
-          adj.id === adjustmentId ? { ...adj, status: 'accepted' as const } : adj
+          adj.id === adjustment.id ? { ...adj, status: 'accepted' as const } : adj
         )
       );
       const response = await fetch("/api/checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId: missionId, amount: newPrice })
+        body: JSON.stringify({ requestId: adjustment.requestId, amount: adjustment.newPrice })
       });
       const data = await response.json();
       if (data.url) {

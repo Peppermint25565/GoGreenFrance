@@ -15,8 +15,6 @@ interface PriceAdjustmentModalProps {
   onClose: () => void;
   missionId: string;
   originalPrice: number;
-  minPrice: number;
-  maxPrice: number;
   clientName: string;
   serviceName: string;
   onSubmitAdjustment: (adjustment: {
@@ -32,8 +30,6 @@ const PriceAdjustmentModal = ({
   onClose, 
   missionId,
   originalPrice,
-  minPrice,
-  maxPrice,
   clientName,
   serviceName,
   onSubmitAdjustment 
@@ -66,15 +62,6 @@ const PriceAdjustmentModal = ({
   };
 
   const handleSubmit = () => {
-    if (newPrice < minPrice || newPrice > maxPrice) {
-      toast({
-        title: "Prix invalide",
-        description: `Le prix doit être entre ${minPrice}€ et ${maxPrice}€`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (newPrice > originalPrice && justification.trim().length < 20) {
       toast({
         title: "Justification requise",
@@ -124,23 +111,17 @@ const PriceAdjustmentModal = ({
 
           {/* Ajustement prix */}
           <div className="space-y-2">
-            <Label htmlFor="price">Nouveau tarif (entre {minPrice}€ et {maxPrice}€)</Label>
+            <Label htmlFor="price">Nouveau tarif</Label>
             <div className="flex items-center space-x-2">
               <Input
                 id="price"
                 type="number"
-                min={minPrice}
-                max={maxPrice}
                 step="5"
                 value={newPrice}
                 onChange={(e) => setNewPrice(Number(e.target.value))}
                 className="flex-1"
               />
               <Euro className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Min: {minPrice}€</span>
-              <span>Max: {maxPrice}€</span>
             </div>
           </div>
 

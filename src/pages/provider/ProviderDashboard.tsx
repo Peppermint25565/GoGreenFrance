@@ -13,39 +13,9 @@ import {
 import KYCVerification from "@/components/provider/KYCVerification";
 import MissionDetail from "@/components/provider/MissionDetail";
 import EarningsTracker from "@/components/provider/EarningsTracker";
-import { collection, doc, onSnapshot, query, Timestamp, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-
-export interface Mission {
-  id: string;
-  title: string;
-  description: string;
-  client: {
-    name: string;
-    avatar?: string;
-    phone: string;
-    rating: number;
-  };
-  location: {
-    address: string;
-    distance?: string;
-    coordinates?: { lat: number; lng: number };
-  };
-  payment?: {
-    amount: number;
-    currency: string;
-    paymentMethod: string;
-  };
-  requirements?: string[];
-  tools?: string[];
-  status: "available" | "accepted" | "in_progress" | "completed" | "cancelled";
-  urgency?: "normal" | "high";
-  estimatedPrice: number;
-  category: string;
-  providerId?: string;
-  note?: number;
-  createdAt: Timestamp;
-}
+import { Request } from "@/types/requests";
 
 function useProfile(uid: string | undefined) {
   const [profile, setProfile] = useState<any | null>(null);
@@ -64,8 +34,8 @@ function useProfile(uid: string | undefined) {
 }
 
 function useMissions(uid: string | undefined) {
-  const [available, setAvailable] = useState<Mission[]>([]);
-  const [mine, setMine] = useState<Mission[]>([]);
+  const [available, setAvailable] = useState<Request[]>([]);
+  const [mine, setMine] = useState<Request[]>([]);
   const [note, setNote] = useState<number>(null)
   const [loading, setLoading] = useState(true);
 
@@ -75,25 +45,25 @@ function useMissions(uid: string | undefined) {
       where("status", "==", "pending")
     );
     const unsub1 = onSnapshot(qAvailable, (snap) => {
-      setAvailable(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Mission) })));
+      setAvailable(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) })));
     });
 
     if (uid) {
       const qMine = query(
         collection(db, "requests"),
         where("providerId", "==", uid),
-        where("status", "in", ["accepted", "in_progress", "completed"])
+        where("status", "in", ["accepted", "in_progress"])
       );
       const unsub2 = onSnapshot(qMine, (snap) => {
-        setMine(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Mission) })));
+        setMine(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) })));
         let count = 0
         mine.forEach(elm => {
-          if (elm.note) {
+          if (elm.rating) {
             count++;
             if (!note) {
-              setNote(elm.note)
+              setNote(elm.rating)
             } else
-              setNote(((note * (count - 1)) + elm.note) / count)
+              setNote(((note * (count - 1)) + elm.rating) / count)
           }
         });
         setLoading(false);
@@ -139,7 +109,7 @@ const ProviderDashboard = () => {
         const d = m.createdAt.toDate();
         return d.getMonth() === month && d.getFullYear() === year;
       })
-      .reduce((sum, m) => sum + m.payment.amount, 0);
+      .reduce((sum, m) => sum + m.priceOriginal, 0);
 
     return {
       completedCount: completed.length,
@@ -148,19 +118,25 @@ const ProviderDashboard = () => {
     };
   }, [mine]);
 
-  const handleAcceptMission = (missionId: string) => {
-    console.log("Mission acceptée:", missionId);
-    // Logic pour accepter la mission
+  const handleAcceptMission = async (mission: Request) => {
+    await updateDoc(doc(db, "requests", mission.id), {
+      providerId: user.id,
+      providerName: user.name,
+      status: "accepted",
+      priceFinal: mission.priceOriginal
+    })
+    navigate("/provider/dashboard")
   };
 
-  const handleDeclineMission = (missionId: string) => {
+  const handleDeclineMission = async (missionId: string) => {
     console.log("Mission refusée:", missionId);
     // Logic pour refuser la mission
   };
 
-  const handleUpdateMissionStatus = (missionId: string, status: string) => {
-    console.log("Statut mission mis à jour:", missionId, status);
-    // Logic pour mettre à jour le statut
+  const handleUpdateMissionStatus = async (missionId: string, status: string) => {
+    await updateDoc(doc(db, "requests", missionId), {
+      status: status,
+    })
   };
 
   const getUrgencyBadge = (urgency: string) => {
@@ -227,6 +203,22 @@ const ProviderDashboard = () => {
       );
     }
   }
+
+  function getRemainingTimeText(
+    startDate: Date,
+    hoursToAdd: number
+  ): string {
+    const target = new Date(startDate.getTime() + hoursToAdd * 60 * 60 * 1000);
+    const diffMs = target.getTime() - Date.now();
+    if (diffMs <= 0) return "Temps écoulé";
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return `${hours} h ${pad(minutes)} min ${pad(seconds)} s`;
+  }
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -302,20 +294,15 @@ const ProviderDashboard = () => {
                               </div>
                               <p className="text-gray-600 mb-2">{request.description}</p>
                               <div className="flex items-center gap-4 text-sm text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {request.location.distance}
-                                </span>
-                                <span>{request.createdAt.toString()}</span>
-                                <span>{request.schedule.timeSlot}</span>
+                                <span>{request.createdAt.toDate().toDateString()}</span>
                               </div>
                               <div className="mt-2 text-xs text-orange-600">
                                 <Clock className="h-3 w-3 inline mr-1" />
-                                Accepter avant: {request}
+                                Accepter avant: {getRemainingTimeText(request.createdAt.toDate(), request.urgency === "low" ? 12 : (request.urgency === "high" ? 3 : 6))}
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-2xl font-bold text-green-600 mb-2">{request.payment.amount}€</div>
+                              <div className="text-2xl font-bold text-green-600 mb-2">{request.priceOriginal}€</div>
                               <div className="flex gap-2">
                                 <Button 
                                   variant="outline" 
@@ -326,7 +313,7 @@ const ProviderDashboard = () => {
                                 </Button>
                                 <Button 
                                   size="sm"
-                                  onClick={() => handleAcceptMission(request.id)}
+                                  onClick={() => handleAcceptMission(request)}
                                 >
                                   Accepter
                                 </Button>
@@ -362,7 +349,7 @@ const ProviderDashboard = () => {
                                 </Badge>
                               </div>
                               <p className="text-gray-600 mb-2">
-                                {job.client.name} • {job.location.address.split(',')[0]} • {job.schedule.date}
+                                {job.clientName} • {job.location.address}
                               </p>
                               <div className="flex gap-2">
                                 <Button variant="outline" size="sm">
@@ -372,7 +359,7 @@ const ProviderDashboard = () => {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-xl font-bold text-green-600 mb-2">{job.payment.amount}€</div>
+                              <div className="text-xl font-bold text-green-600 mb-2">{job.priceOriginal}€</div>
                               <Button 
                                 size="sm"
                                 onClick={() => setSelectedMission(job.id)}
@@ -403,7 +390,7 @@ const ProviderDashboard = () => {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Note moyenne</span>
-                        <span className="font-medium">{note} / 5</span>
+                        <span className="font-medium">{note ? note : "-"} / 5</span>
                       </div>
                     </div>
                   </CardContent>

@@ -33,7 +33,6 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <img src={fond} style={{width: "100%"}}/>
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
@@ -219,19 +218,9 @@ const Index = () => {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="/" className="hover:text-white transition-colors">Centre d'aide</Link></li>
-                <li><Link to="/" className="hover:text-white transition-colors">Contact</Link></li>
-                <li><Link to="/" className="hover:text-white transition-colors">FAQ</Link></li>
-              </ul>
-            </div>
-            <div>
               <h4 className="font-semibold mb-4">Légal</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link to="/terms-of-service" className="hover:text-white transition-colors">CGU</Link></li>
-                <li><Link to="/" className="hover:text-white transition-colors">Confidentialité</Link></li>
-                <li><Link to="/" className="hover:text-white transition-colors">Mentions légales</Link></li>
               </ul>
             </div>
           </div>

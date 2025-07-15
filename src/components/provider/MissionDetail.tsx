@@ -10,54 +10,22 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/firebaseConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Request, RequestStatus } from "@/types/requests";
 
-interface Mission {
-  id: string;
-  title: string;
-  description: string;
-  client: {
-    name: string;
-    avatar?: string;
-    phone: string;
-    rating: number;
-  };
-  location: {
-    address: string;
-    distance?: string;
-    coordinates?: { lat: number; lng: number };
-  };
-  schedule: {
-    date: string; // ISO date (YYYY-MM-DD)
-    timeSlot: string;
-    estimatedDuration?: string;
-  };
-  payment?: {
-    amount: number;
-    currency: string;
-    paymentMethod: string;
-  };
-  requirements?: string[];
-  tools?: string[];
-  status: "available" | "accepted" | "in_progress" | "completed" | "cancelled";
-  acceptDeadline?: string;
-  urgency?: "low" | "medium" | "high";
-  category: string;
-  providerId?: string; // null when available
-}
 interface MissionDetailProps {
-  mission: Mission;
-  onAccept: (missionId: string) => void;
+  mission: Request;
+  onAccept: (mission: Request) => void;
   onDecline: (missionId: string) => void;
-  onUpdateStatus: (missionId: string, status: "available" | "accepted" | "in_progress" | "completed") => void;
+  onUpdateStatus: (missionId: string, status: RequestStatus) => void;
 }
 
 const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: MissionDetailProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [currentStatus, setCurrentStatus] = useState<"available" | "accepted" | "in_progress" | "completed" | "cancelled">(mission.status);
+  const [currentStatus, setCurrentStatus] = useState<RequestStatus>(mission.status);
   const [showPriceAdjustment, setShowPriceAdjustment] = useState(false);
 
-  const handleStatusUpdate = (newStatus: "available" | "accepted" | "in_progress" | "completed") => {
+  const handleStatusUpdate = (newStatus: RequestStatus) => {
     setCurrentStatus(newStatus);
     onUpdateStatus(mission.id, newStatus);
   };
@@ -72,7 +40,7 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
     try {
       const adjQuery = query(
         collection(db, "priceAdjustments"),
-        where("missionId", "==", mission.id),
+        where("requestId", "==", mission.id),
         where("providerId", "==", user.id),
         where("status", "==", "pending")
       );
@@ -90,7 +58,7 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         providerId: user.id,
         providerName: user.name,
         serviceName: mission.title,
-        originalPrice: mission.payment.amount,
+        originalPrice: mission.priceOriginal,
         newPrice: adjustment.newPrice,
         justification: adjustment.justification,
         photos: [] as string[],
@@ -132,14 +100,14 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
 
   const renderMissionActions = () => {
     switch (currentStatus) {
-      case "available":
+      case "pending":
         return (
           <div className="space-y-3">
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => onDecline(mission.id)} className="flex-1">
                 Refuser
               </Button>
-              <Button onClick={() => onAccept(mission.id)} className="flex-1">
+              <Button onClick={() => onAccept(mission)} className="flex-1">
                 Accepter
               </Button>
             </div>
@@ -210,6 +178,21 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
     
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
   };
+
+  function getRemainingTimeText(
+    startDate: Date,
+    hoursToAdd: number
+  ): string {
+    const target = new Date(startDate.getTime() + hoursToAdd * 60 * 60 * 1000);
+    const diffMs = target.getTime() - Date.now();
+    if (diffMs <= 0) return "Temps écoulé";
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return `${hours} h ${pad(minutes)} min ${pad(seconds)} s`;
+  }
   
 
   return (
@@ -230,11 +213,11 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         <CardContent>
           <p className="text-gray-700 mb-4">{mission.description}</p>
           
-          {currentStatus === "available" && (
+          {currentStatus === "pending" && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-sm text-yellow-800">
                 <Clock className="h-4 w-4 inline mr-1" />
-                Temps limite pour accepter : {mission.acceptDeadline}
+                Temps limite pour accepter : {getRemainingTimeText(mission.createdAt.toDate(), mission.urgency === "low" ? 12 : (mission.urgency === "high" ? 3 : 6))}
               </p>
             </div>
           )}
@@ -255,11 +238,11 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
               <User className="h-6 w-6 text-gray-500" />
             </div>
             <div>
-              <h3 className="font-medium">{mission.client.name}</h3>
+              <h3 className="font-medium">{mission.clientName}</h3>
             </div>
           </div>
           
-          {currentStatus !== "available" && (
+          {currentStatus !== "pending" && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm">
                 <MessageSquare className="h-4 w-4 mr-2" />
@@ -280,9 +263,6 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         </CardHeader>
         <CardContent>
           <p className="font-medium mb-2">{mission.location.address}</p>
-          <p className="text-sm text-gray-600 mb-4">
-            Distance : {mission.location.distance}
-          </p>
           <div className="bg-gray-100 rounded-lg h-1000 flex items-center justify-center mb-4">
             {(mission.location.coordinates || mission.location.address) && (mission.location.address ? (
                 <iframe
@@ -321,18 +301,12 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
           <CardContent>
             <div className="text-center mb-4">
               <div className="text-3xl font-bold text-green-600">
-                {mission.payment.amount}€
+                {mission.priceOriginal}€
               </div>
               <p className="text-sm text-gray-600">
                 Paiement automatique après validation
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Fourchette: {mission.payment.amount}€ - {mission.payment.maxPrice}€
-              </p>
             </div>
-            <Badge variant="outline" className="w-full justify-center">
-              {mission.payment.paymentMethod}
-            </Badge>
           </CardContent>
         </Card>
       </div>
@@ -346,10 +320,8 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         isOpen={showPriceAdjustment}
         onClose={() => setShowPriceAdjustment(false)}
         missionId={mission.id}
-        originalPrice={mission.payment.amount}
-        minPrice={mission.payment.minPrice}
-        maxPrice={mission.payment.maxPrice}
-        clientName={mission.client.name}
+        originalPrice={mission.priceOriginal}
+        clientName={mission.clientName}
         serviceName={mission.title}
         onSubmitAdjustment={handlePriceAdjustment}
       />

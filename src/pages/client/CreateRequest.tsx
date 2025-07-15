@@ -140,18 +140,20 @@ const CreateRequest = () => {
    const serviceBrand = formData.service.category === 'jardinage' ? 'GreenGoFrance' : 'GreenFix';
    try {
      const docRef = await addDoc(collection(db, "requests"), {
-       clientId: user.id,
-       service: formData.service,
-       location: formData.location,
-       description: formData.description,
-       surface: formData.surface,
-       urgency: formData.urgency,
-       isExpress: formData.isExpress,
-       ecoOptions: formData.ecoOptions,
-       estimatedPrice: estimatedPrice,
-       status: "pending",
-       createdAt: new Date()
-     });
+      clientId: user.id,
+      clientName: user.name,
+      title: formData.service.name,
+      category: formData.service.category,
+      description: formData.description,
+      location: formData.location,
+      surface: parseFloat(formData.surface),
+      urgency: formData.urgency === 'urgent' ? 'high' : 'low',
+      isExpress: formData.isExpress,
+      ecoOptions: formData.ecoOptions,
+      priceOriginal: estimatedPrice,
+      status: "pending",
+      createdAt: new Date()
+    });
      if (formData.photos.length > 0) {
        const photoURLs: string[] = [];
        for (const [index, photo] of formData.photos.entries()) {

@@ -1,33 +1,47 @@
-export type RequestStatus = "open" | "accepted" | "completed" | "cancelled";
+import { Timestamp } from "firebase/firestore";
+
+export type RequestStatus = "pending" | "accepted" | "in_progress" | "completed" | "cancelled";
 
 export interface Request {
-  id: string;
+  id?: string;
   clientId: string;
-  providerId?: string;      // défini après acceptation
-  service: string;          // ex. "tonte", "élagage", ...
-  address: string;
-  lat: number;
-  lng: number;
+  clientName: string;
+  providerId?: string;
+  providerName?: string;
+  title: string;
+  category: string;
   description: string;
+  location: {
+    address: string;
+    coordinates: { lat: number; lng: number };
+  };
   surface: number;
-  urgency: number;          // 1–5
-  photos: string[];         // URLs Firebase Storage
-  priceOriginal: number;    // estimation client
-  priceFinal: number;       // devient définitif après acceptation
+  urgency: "low" | "medium" | "high";
+  isExpress: boolean;
+  ecoOptions: {
+    certificateRequested: boolean;
+    ecoFriendlyMethods: boolean;
+  };
+  priceOriginal: number;
+  priceFinal?: number;
+  photos?: string[];
   status: RequestStatus;
-  createdAt: number;        // Date.now()
+  createdAt: Timestamp;
+  rating?: number;
+  ratingComment?: string;
 }
-
-export type AdjustmentStatus = "pending" | "accepted" | "rejected";
 
 export interface PriceAdjustment {
   id: string;
   requestId: string;
-  clientId: string;         // redondant mais pratique
   providerId: string;
+  providerName: string;
+  serviceName: string;
+  originalPrice: number;
   newPrice: number;
   justification: string;
-  photos: string[];         // URLs
-  status: AdjustmentStatus;
-  createdAt: number;
+  photos?: string[];
+  videos?: string[];
+  timestamp: any;
+  status: "pending" | "accepted" | "rejected";
 }

@@ -8,24 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Euro, Clock, FileImage, Video, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface PriceAdjustment {
-  id: string;
-  missionId: string;
-  providerName: string;
-  serviceName: string;
-  originalPrice: number;
-  newPrice: number;
-  justification: string;
-  photos: string[];
-  videos: string[];
-  timestamp: Date;
-  status: 'pending' | 'accepted' | 'rejected';
-}
+import { PriceAdjustment } from "@/types/requests";
 
 interface PriceAdjustmentNotificationProps {
   adjustments: PriceAdjustment[];
-  onAcceptAdjustment: (adjustmentId: string, feedback?: string) => void;
+  onAcceptAdjustment: (adjustment: PriceAdjustment, feedback?: string) => void;
   onRejectAdjustment: (adjustmentId: string, reason: string) => void;
 }
 
@@ -43,7 +30,7 @@ const PriceAdjustmentNotification = ({
   const pendingAdjustments = adjustments.filter(adj => adj.status === 'pending');
 
   const handleAccept = (adjustment: PriceAdjustment) => {
-    onAcceptAdjustment(adjustment.id, feedback.trim() || undefined);
+    onAcceptAdjustment(adjustment, feedback.trim() || undefined);
     toast({
       title: "Ajustement accepté",
       description: `Le nouveau tarif de ${adjustment.newPrice}€ a été accepté`,
