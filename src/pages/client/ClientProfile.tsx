@@ -58,7 +58,7 @@ const ClientProfile = () => {
           <Link to="/" className="flex items-center space-x-2">
               <img 
                 src="/lovable-uploads/logo.png" 
-                alt="GreenGo France" 
+                alt="Atoi" 
                 className="h-28 w-auto" 
               />
             </Link>

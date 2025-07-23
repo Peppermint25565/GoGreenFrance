@@ -38,7 +38,7 @@ const CreateRequest = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const serviceType = searchParams.get('type') || 'greengo';
+  const serviceType = searchParams.get('type') || 'atoigreen';
   
   const [formData, setFormData] = useState({
     service: null as Service | null,
@@ -137,7 +137,7 @@ const CreateRequest = () => {
      });
      return;
    }
-   const serviceBrand = formData.service.category === 'jardinage' ? 'GreenGoFrance' : 'GreenFix';
+   const serviceBrand = formData.service.category === 'jardinage' ? 'atoigreen' : 'atoifix';
    try {
      const docRef = await addDoc(collection(db, "requests"), {
       clientId: user.id,
@@ -190,7 +190,7 @@ const CreateRequest = () => {
             <Link to="/" className="flex items-center space-x-2">
               <img 
                 src="/lovable-uploads/logo.png" 
-                alt="GreenGo France" 
+                alt="Atoi" 
                 className="h-28 w-auto" 
               />
             </Link>

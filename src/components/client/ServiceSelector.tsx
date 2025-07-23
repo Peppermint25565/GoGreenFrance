@@ -266,7 +266,7 @@ const ServiceSelector = ({ onServiceSelect, selectedService }: ServiceSelectorPr
             >
               <Leaf className="h-6 w-6 text-green-600" />
               <div>
-                <div className="font-medium">GreenGo - Jardinage</div>
+                <div className="font-medium">AtoiGreen - Jardinage</div>
                 <div className="text-xs opacity-70">Écoresponsable et durable</div>
               </div>
             </Button>
@@ -281,7 +281,7 @@ const ServiceSelector = ({ onServiceSelect, selectedService }: ServiceSelectorPr
             >
               <Wrench className="h-6 w-6 text-blue-600" />
               <div>
-                <div className="font-medium">GreenFix - Bricolage</div>
+                <div className="font-medium">AtoiFix - Bricolage</div>
                 <div className="text-xs opacity-70">Réparations et montages</div>
               </div>
             </Button>

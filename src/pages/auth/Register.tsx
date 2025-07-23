@@ -88,7 +88,7 @@ const Register = () => {
           <Link to="/" className="inline-flex items-center space-x-2">
             <img 
               src="/lovable-uploads/logo.png" 
-              alt="GreenGo France" 
+              alt="Atoi" 
               className="h-32 w-auto" 
             />
           </Link>
@@ -98,7 +98,7 @@ const Register = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Inscription</CardTitle>
             <CardDescription>
-              Créez votre compte GreenGoFrance
+              Créez votre compte Atoi
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -210,7 +210,7 @@ const Register = () => {
                       >
                         Conditions Générales de Service (CGS)
                       </Link>
-                      {" "}de GreenGoFrance <span className="text-red-500">*</span>
+                      {" "}de Atoi <span className="text-red-500">*</span>
                     </Label>
                     <p className="text-xs text-gray-500 mt-1">
                       En cochant cette case, vous confirmez avoir lu et accepté nos conditions d'utilisation.

@@ -45,7 +45,7 @@ const Login = () => {
           <Link to="/" className="inline-flex items-center space-x-2">
             <img 
               src="/lovable-uploads/logo.png" 
-              alt="GreenGo France" 
+              alt="Atoi" 
               className="h-32 w-auto" 
             />
           </Link>
@@ -55,7 +55,7 @@ const Login = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Connexion</CardTitle>
             <CardDescription>
-              Connectez-vous à votre compte GreenGo France
+              Connectez-vous à votre compte Atoi
             </CardDescription>
           </CardHeader>
           <CardContent>

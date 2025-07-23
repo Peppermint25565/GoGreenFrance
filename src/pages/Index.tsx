@@ -16,7 +16,7 @@ const Index = () => {
             <div className="flex items-center space-x-2">
               <img 
                 src="/lovable-uploads/logo.png" 
-                alt="GreenGo France" 
+                alt="Atoi" 
                 className="h-32 w-auto" 
               />
             </div>
@@ -132,7 +132,7 @@ const Index = () => {
       <section className="py-16 px-4 bg-gray-50">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Pourquoi choisir GreenGoFrance ?
+            Pourquoi choisir Atoi ?
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
@@ -201,7 +201,7 @@ const Index = () => {
               <div className="flex items-center space-x-2 mb-4">
                 <img 
                   src="/lovable-uploads/logo.png" 
-                  alt="GreenGo France" 
+                  alt="Atoi" 
                   className="h-24 w-auto filter brightness-0 invert" 
                 />
               </div>
@@ -225,7 +225,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 GreenGoFrance. Tous droits réservés.</p>
+            <p>&copy; 2024 Atoi. Tous droits réservés.</p>
           </div>
         </div>
       </footer>
