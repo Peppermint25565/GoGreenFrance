@@ -8,17 +8,21 @@ export interface UploadData {
 }
 
 export async function uploadProfilePictures(file: File, uid: string) {
-  const { data, error } = await supabase.storage.from('profile_pictures').upload('/' + uid, file)
+  const { data } = await supabase.storage.from('profile_pictures').exists(uid + file.name)
+  if (data) {
+    await supabase.storage.from('profile_pictures').remove([uid + file.name])
+  }
+  const { error } = await supabase.storage.from('profile_pictures').upload(uid + file.name, file)
   if (error) {
     console.log(error);
     return false;
   } else {
-    return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/profile_pictures/${uid}`
+    return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/profile_pictures/${uid + file.name}`
   }
 }
 
 export async function uploadRequest(file: File, requestId: string) {
-  const { data, error } = await supabase.storage.from('requests').upload('/' + requestId, file)
+  const { data, error } = await supabase.storage.from('requests').upload(requestId + file.name, file)
   if (error) {
     console.log(error);
     return false;
@@ -28,7 +32,9 @@ export async function uploadRequest(file: File, requestId: string) {
 }
 
 export function getProfilePictureUrl(uid: string) {
-  return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/profile_pictures/${uid}`
+  const { data: urlData } = supabase.storage.from('profiles_pictures').getPublicUrl(uid);
+  console.log(urlData.publicUrl)
+  return urlData.publicUrl;
 }
 
 export function getRequestImgUrl(requestId: string) {
@@ -37,7 +43,11 @@ export function getRequestImgUrl(requestId: string) {
 
 export async function uploadKyc(file: File, providerId: string, docType: string) {
   const filePath = `${providerId}/${docType}`;
-  const { data, error } = await supabase.storage.from('kyc-docs').upload(filePath, file);
+  const { data } = await supabase.storage.from('kyc-docs').exists(filePath)
+  if (data) {
+    await supabase.storage.from('kyc-docs').remove([filePath])
+  }
+  const { error } = await supabase.storage.from('kyc-docs').upload(filePath, file);
   if (error) {
     throw error;
   }

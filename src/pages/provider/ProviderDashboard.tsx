@@ -72,7 +72,7 @@ const ProviderDashboard = () => {
   const queryParameters = new URLSearchParams(window.location.search);
   const tab = Number(queryParameters.get("tab"));
 
-  const { u, logout } = useAuth();
+  const { u, logout, updateUserData } = useAuth();
   const user: UserProvider = u as UserProvider;
   const navigate = useNavigate();
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
@@ -230,7 +230,7 @@ const ProviderDashboard = () => {
       return
     setLoading(true);
     const data = user.kyc;
-    toUpload.forEach(async (up) => {
+    for (const up of toUpload) {
       const url: string = await uploadKyc(up.file, user.id, up.id);
       if (up.id == 'identity') {
         data.identity.url = url
@@ -245,10 +245,9 @@ const ProviderDashboard = () => {
         data.bank.url = url
         data.insurance.status = "in_review"
       }
-    })
-    console.log(data)
+    }
     await updateDoc(doc(db, 'profiles', user.id), {kyc: data});
-    user.kyc = data;
+    await updateUserData()
     setToUpload([])
     setLoading(false);
   };

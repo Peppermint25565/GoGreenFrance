@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { rejectAdjustment } from "@/services/requests";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, Plus, MessageSquare, MapPin, Calendar, Settings, Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import { PriceAdjustment } from "@/types/requests";
 import Loader from "@/components/loader/Loader";
 
 const ClientDashboard = () => {
-  const { user, logout, fetchClientDashboard } = useAuth();
+  const { u, logout, fetchClientDashboard } = useAuth();
+  const user: UserClient = u as UserClient;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeRequestsCount, setActiveRequestsCount] = useState(0);

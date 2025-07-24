@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, ArrowLeft, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ interface RatingModal {
 }
 
 const OrderHistoryPage = () => {
-  const { user, logout } = useAuth();
+  const { u, logout } = useAuth();
+  const user: UserClient = u as UserClient
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState<boolean>(true);
@@ -111,6 +112,7 @@ const OrderHistoryPage = () => {
             onViewDetails={handleViewDetails}
             onDownloadInvoice={handleDownloadInvoice}
             onRateProvider={handleRateProvider}
+            user={user}
           />
         </div>
       </div>

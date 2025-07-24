@@ -7,24 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Download, Eye, Search, Star, Euro, Clock } from "lucide-react";
 import { db } from "@/firebaseConfig";
-import { collection, getDocs, orderBy, query, Timestamp } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, Timestamp, where } from "firebase/firestore";
 import { Interface } from "readline";
 import { Request } from "@/types/requests";
+import { UserClient } from "@/contexts/AuthContext";
 
 interface OrderHistoryProps {
   onViewDetails: (orderId: string) => void;
   onDownloadInvoice: (orderId: string) => void;
   onRateProvider: (orderId: string) => void;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  user: UserClient
 }
 
-function useOrders(setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
+function useOrders(setLoading: React.Dispatch<React.SetStateAction<boolean>>, uid: string) {
   const [orders, setOrders] = useState<Request[]>([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const q = query(collection(db, "requests"), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "requests"), where("clientId", "==", uid), orderBy("createdAt", "desc"));
         const snap = await getDocs(q);
         const parsed = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Request, "id">) }));
         setOrders(parsed);
@@ -39,8 +41,8 @@ function useOrders(setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
   return { orders };
 }
 
-const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider, setLoading }: OrderHistoryProps) => {
-  const { orders } = useOrders(setLoading);
+const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider, setLoading, user }: OrderHistoryProps) => {
+  const { orders } = useOrders(setLoading, user.id);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");

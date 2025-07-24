@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Leaf, ArrowLeft, Upload, Calculator, Clock, Zap, Crown, Euro, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ import LocationPicker from "@/components/client/LocationPicker";
 import ServiceSelector from "@/components/client/ServiceSelector";
 import { Request, RequestStatus } from "@/types/requests";
 import { uploadRequest } from "@/supabase";
+import { useDayPicker } from "react-day-picker";
 
 interface Service {
   id: string;
@@ -35,11 +36,13 @@ interface Service {
 }
 
 const CreateRequest = () => {
-  const { user, logout } = useAuth();
+  const { u, logout } = useAuth();
+  const user: UserClient = u as UserClient
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const serviceType = searchParams.get('type') || 'atoigreen';
+  const [paid, setPaid] = useState<boolean>(false);
   
   const [formData, setFormData] = useState({
     service: null as Service | null,
@@ -127,6 +130,20 @@ const CreateRequest = () => {
     setFormData({ ...formData, photos: newPhotos });
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    if (sessionId) {
+      fetch(`/session-status?session_id=${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'complete' || data.payment_status === 'paid') {
+            setPaid(true);
+          }
+        });
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -134,6 +151,10 @@ const CreateRequest = () => {
       return;
     }
     const serviceBrand = formData.service.category === 'jardinage' ? 'atoigreen' : 'atoifix';
+    
+    if (!paid) {
+      return;
+    }
     try {
       const docRef = await addDoc(collection(db, "requests"), {
         clientId: user.id,

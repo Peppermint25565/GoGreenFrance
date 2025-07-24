@@ -33,7 +33,7 @@ const Register = () => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
       setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));   // pour l’aperçu
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
@@ -119,7 +119,7 @@ const Register = () => {
                 <Label>Photo de profil (optionnel)</Label>
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={avatarPreview || ""} />
+                    <AvatarImage onLoadingStatusChange={(s) => (s == "loaded" ? setLoading(false) : null)} src={avatarPreview || ""} />
                     <AvatarFallback className="text-lg">
                       {name ? name.substring(0, 2).toUpperCase() : <Camera className="h-8 w-8" />}
                     </AvatarFallback>

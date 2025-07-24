@@ -58,17 +58,10 @@ interface AuthContextType {
   ) => Promise<UserClient | UserProvider>;
   logout: () => Promise<void>;
   loading: boolean;
-  changeAvatar: (
-    uid: string,
-    avatarFile?: File | null
-  ) => Promise<void>;
-  updateProviderProfile: (
-    avatarFile: File,
-    profileData: any
-  ) => Promise<void>;
   fetchClientDashboard: (
     userId: string
   ) => Promise<QuerySnapshot<DocumentData, DocumentData>>;
+  updateUserData: () => Promise<void>;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -207,6 +200,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUserData = async () => {
+    try {
+      const docRef = doc(db, "profiles", u.id);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) throw new Error("Profil introuvable.");
+      const data = docSnap.data();
+      let currentUser: UserClient | UserProvider;
+      if (data.role == 0 || data.role == 2) {
+        currentUser = {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          role: data.role as UserRole,
+          avatar: data.avatar || undefined,
+        } as UserClient;
+      } else if (data.role == 1) {
+        currentUser = {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          role: data.role as UserRole,
+          avatar: data.avatar || undefined,
+          verified: data.verified,
+          phone: data.phone,
+          address: data.address,
+          specializations: data.specializations,
+          zone: data.zone,
+          description: data.description,
+          availability: {
+            monday: data.availability.monday,
+            tuesday: data.availability.tuesday,
+            wednesday: data.availability.wednesday,
+            thursday: data.availability.thursday,
+            friday: data.availability.friday,
+            saturday: data.availability.saturday,
+            sunday: data.availability.sunday,
+          },
+          kyc: {
+            identity: { url: data.kyc.identity.url, status: data.kyc.identity.status },
+            address:  { url: data.kyc.address.url, status: data.kyc.address.status },
+            insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status },
+            bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status }
+          } 
+        } as UserProvider;
+      }
+      setUser(currentUser);
+      localStorage.setItem("user", JSON.stringify(currentUser));
+    } catch (error) {
+      console.error("Erreur login :", error);
+      throw error;
+    }
+  };
+
   // Fonction d'inscription
   const register = async (
     email: string,
@@ -278,55 +324,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const changeAvatar = async (
-    uid: string,
-    avatarFile?: File | null
-  ) => {
-    setLoading(true);
-    try {
-      let photoURL: string = "";
-
-      if (avatarFile) {
-        const ext = avatarFile.name.split('.').pop();
-        const fileRef = ref(storage, `avatars/${uid}.${ext}`);
-        await uploadBytes(fileRef, avatarFile);
-        photoURL = await getDownloadURL(fileRef);
-      }
-
-      await updateDoc(
-        doc(db, "profiles", uid),
-        { avatar: photoURL }
-);
-    } catch (error) {
-      console.error("Erreur inscription :", error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateProviderProfile = async (
-    avatarFile: File,
-    profileData: any
-  ) => {
-    if (avatarFile) {
-      const storageRef = ref(storage, `avatars/${u.id}`);
-      await uploadBytes(storageRef, avatarFile);
-      let photoURL = await getDownloadURL(storageRef);
-        const dataToSave = {
-        ...profileData,
-        photoURL,
-        updatedAt: Date.now(),
-      };
-    }
-    const dataToSave = {
-      ...profileData,
-      updatedAt: Date.now(),
-    };
-
-    await setDoc(doc(db, 'profiles', u.id), dataToSave, { merge: true });
-  }
-
   const fetchClientDashboard = async (
     userId: string
   ) => {
@@ -337,7 +334,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await getDocs(reqQuery);
   }
 
-  // Fonction de déconnexion
   const logout = async () => {
     await auth.signOut();
     localStorage.removeItem("user");
@@ -345,7 +341,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ u, login, register, logout, loading, changeAvatar, updateProviderProfile, fetchClientDashboard }}>
+    <AuthContext.Provider value={{ u, login, register, logout, loading, fetchClientDashboard, updateUserData }}>
       {children}
     </AuthContext.Provider>
   );

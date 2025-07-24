@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Leaf, ArrowLeft, MessageCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import ChatWindow from "@/components/chat/ChatWindow";
 import ChatList from "@/components/chat/ChatList";
 
 const Chat = () => {
-  const { user, logout } = useAuth();
+  const { u, logout } = useAuth();
+  const user: UserClient = u as UserClient;
   const navigate = useNavigate();
   const { requestId } = useParams();
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>(requestId);
@@ -37,10 +38,12 @@ const Chat = () => {
     }
   ];
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return null;
+    }
+  }, [])
 
   const selectedChat = mockChats.find(chat => chat.requestId === selectedChatId);
 

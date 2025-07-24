@@ -1,49 +1,53 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, ArrowLeft, Upload, Save, Camera, User } from "lucide-react";
 import {
   updateEmail,
   updateProfile,
+  UserProfile,
 } from 'firebase/auth';
-import { auth } from "@/firebaseConfig";
+import { auth, db } from "@/firebaseConfig";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
-import { getProfilePictureUrl } from "@/supabase";
+import { getProfilePictureUrl, uploadProfilePictures } from "@/supabase";
 import { setLogLevel } from "firebase/app";
 import Loader from "@/components/loader/Loader";
+import { doc, updateDoc } from "firebase/firestore";
 
 const ClientProfile = () => {
-  const { user, logout, changeAvatar } = useAuth();
+  const { u, logout, updateUserData } = useAuth();
+  const user: UserClient = u as UserClient
   const navigate = useNavigate();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(getProfilePictureUrl(user.id));
-  const [loading, setLoading] = useState<boolean>(true);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar);
+  const [loading, setLoading] = useState<boolean>(avatarPreview ? true : false);
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
   });
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
+      setLoading(true);
       const file = e.target.files[0];
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
-      changeAvatar(user.id, avatarFile);
     }
   };
 
-
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return null;
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     setLoading(true);
@@ -51,6 +55,9 @@ const ClientProfile = () => {
     const user = auth.currentUser
     await updateProfile(user, { displayName: profileData.name })
     await updateEmail(user, profileData.email)
+    const url: string = await uploadProfilePictures(avatarFile, user.uid) as string;
+    await updateDoc(doc(db, "profiles", user.uid), {avatar: url})
+    await updateUserData()
     navigate("/client/dashboard")
   };
 
@@ -101,7 +108,7 @@ const ClientProfile = () => {
                   <Label>Photo de profil (optionnel)</Label>
                   <div className="flex flex-col items-center space-y-4">
                     <Avatar className="h-24 w-24 flex flex-col items-center justify-center space-y-2 rounded-full border border-[rgb(223, 223, 223)]">
-                      <AvatarImage onLoad={() => setLoading(false)} src={avatarPreview || ""} />
+                      <AvatarImage onLoadingStatusChange={(s) => (s == "loaded" ? setLoading(false) : null)} src={avatarPreview || ""} />
                       <AvatarFallback className="text-lg">
                         {user.name ? user.name.substring(0, 2).toUpperCase() : <Camera className="h-8 w-8" />}
                       </AvatarFallback>
@@ -110,7 +117,7 @@ const ClientProfile = () => {
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={handleAvatarChange}
+                        onChange={(e) => handleAvatarChange(e)}
                         className="hidden"
                         id="avatar-upload"
                       />

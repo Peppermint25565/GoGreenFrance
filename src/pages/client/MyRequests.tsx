@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, ArrowLeft, MessageSquare, Star, Clock, CheckCircle, XCircle, Plus, Upload, AlertTriangle, Edit, Paperclip, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +16,8 @@ import Loader from "@/components/loader/Loader";
 
 
 const MyRequests = () => {
-  const { user, logout } = useAuth();
+  const { u, logout } = useAuth();
+  const user: UserClient = u as UserClient
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedFilter, setSelectedFilter] = useState("Tous");

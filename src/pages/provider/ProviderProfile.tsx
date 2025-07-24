@@ -14,30 +14,36 @@ import { db, storage } from '@/firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from "@/hooks/use-toast";
 import { profile } from "console";
-import { doc, getDoc } from "firebase/firestore";
-import { getProfilePictureUrl } from "@/supabase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { getProfilePictureUrl, uploadProfilePictures } from "@/supabase";
 import { UserProfile } from "firebase/auth";
+import Loader from "@/components/loader/Loader";
 
 const ProviderProfile = () => {
-  const { u, logout, changeAvatar, updateProviderProfile } = useAuth();
+  const { u, logout, updateUserData } = useAuth();
   const user: UserProvider = u as UserProvider;
   const navigate = useNavigate();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(getProfilePictureUrl(user.id));
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar);
   const { toast } = useToast();
+  const [profileData, setProfileData] = useState<UserProvider>(null);
+  const [loading, setLoading] = useState<boolean>(avatarPreview ? true : false);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoading(true)
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
-      changeAvatar(user.id, avatarFile);
     }
+    setLoading(false);
   };
 
-  const [profileData, setProfileData] = useState<UserProvider>(null);
-
   useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
     const getProfileData = async () => {
       const data = await getDoc(doc(db, "profiles", user.id));
       setProfileData(data.data() as UserProvider)
@@ -45,15 +51,13 @@ const ProviderProfile = () => {
     getProfileData()
   }, [])
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateProviderProfile(avatarFile, profileData);
+      setLoading(true);
+      const url: string = await uploadProfilePictures(avatarFile, user.id) as string;
+      await updateDoc(doc(db, "profiles", user.id), {...profileData, avatar: url});
+      await updateUserData()
       navigate('/provider/dashboard');
     } catch (err) {
       console.error(err);
@@ -86,6 +90,8 @@ const ProviderProfile = () => {
   };
 
   return (
+    <>
+    {loading && (<Loader />)}
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
@@ -130,7 +136,7 @@ const ProviderProfile = () => {
                 <Label>Photo de profil (optionnel)</Label>
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-24 w-24 flex flex-col items-center justify-center space-y-2 rounded-full border border-[rgb(223, 223, 223)]">
-                    <AvatarImage src={avatarPreview || ""} />
+                    <AvatarImage onLoadingStatusChange={(s) => (s == "loaded" ? setLoading(false) : null)} src={avatarPreview || ""} />
                     <AvatarFallback className="text-lg">
                       {user.name ? user.name.substring(0, 2).toUpperCase() : <Camera className="h-8 w-8" />}
                     </AvatarFallback>
@@ -139,7 +145,7 @@ const ProviderProfile = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleAvatarChange}
+                      onChange={(e) => handleAvatarChange(e)}
                       className="hidden"
                       id="avatar-upload"
                     />
@@ -319,7 +325,7 @@ const ProviderProfile = () => {
         </div>
       </div>
     </div>
-  );
+  </>);
 };
 
 export default ProviderProfile;

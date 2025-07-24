@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, Users, FileCheck, Euro, Activity, CheckCircle, XCircle, Clock, Settings, Truck, BarChart3 } from "lucide-react";
 import UserManagement from "@/components/admin/UserManagement";
@@ -12,7 +12,8 @@ import WasteManagement from "@/components/admin/WasteManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { u, logout } = useAuth();
+  const user: UserClient = u as UserClient
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
 
