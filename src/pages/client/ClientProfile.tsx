@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,15 @@ import {
 import { auth } from "@/firebaseConfig";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { getProfilePictureUrl } from "@/supabase";
+import { setLogLevel } from "firebase/app";
+import Loader from "@/components/loader/Loader";
 
 const ClientProfile = () => {
   const { user, logout, changeAvatar } = useAuth();
   const navigate = useNavigate();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(getProfilePictureUrl(user.id));
+  const [loading, setLoading] = useState<boolean>(true);
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -43,6 +46,7 @@ const ClientProfile = () => {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setLoading(true);
     e.preventDefault();
     const user = auth.currentUser
     await updateProfile(user, { displayName: profileData.name })
@@ -51,6 +55,8 @@ const ClientProfile = () => {
   };
 
   return (
+    <>
+    {loading && (<Loader />)}
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
@@ -95,7 +101,7 @@ const ClientProfile = () => {
                   <Label>Photo de profil (optionnel)</Label>
                   <div className="flex flex-col items-center space-y-4">
                     <Avatar className="h-24 w-24 flex flex-col items-center justify-center space-y-2 rounded-full border border-[rgb(223, 223, 223)]">
-                      <AvatarImage src={avatarPreview || ""} />
+                      <AvatarImage onLoad={() => setLoading(false)} src={avatarPreview || ""} />
                       <AvatarFallback className="text-lg">
                         {user.name ? user.name.substring(0, 2).toUpperCase() : <Camera className="h-8 w-8" />}
                       </AvatarFallback>
@@ -157,7 +163,7 @@ const ClientProfile = () => {
         </div>
       </div>
     </div>
-  );
+  </>);
 };
 
 export default ClientProfile;

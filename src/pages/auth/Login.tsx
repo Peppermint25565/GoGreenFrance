@@ -12,7 +12,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, u } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -21,12 +21,18 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      const user = await login(email, password);
       toast({
         title: "Connexion réussie",
         description: "Vous êtes maintenant connecté.",
       });
-      navigate("/client/dashboard");
+      if (user.role == 0) {
+        navigate("/client/dashboard");
+      } else if (user.role == 1) {
+        navigate("/provider/dashboard");
+      } else if (user.role == 2) {
+        navigate("/admin/dashboard");
+      }
     } catch (error) {
       toast({
         title: "Erreur de connexion",

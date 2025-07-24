@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { createRequest } from "@/services/requests";
 import { Button } from "@/components/ui/button";
@@ -13,11 +12,13 @@ import { Leaf, ArrowLeft, Upload, Calculator, Clock, Zap, Crown, Euro, User } fr
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { collection, addDoc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/firebaseConfig";
 import LocationPicker from "@/components/client/LocationPicker";
 import ServiceSelector from "@/components/client/ServiceSelector";
+import { Request, RequestStatus } from "@/types/requests";
+import { uploadRequest } from "@/supabase";
 
 interface Service {
   id: string;
@@ -127,44 +128,36 @@ const CreateRequest = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-   e.preventDefault();
-   
-   if (!formData.service || !formData.location.address || !formData.description || !estimatedPrice) {
-     toast({
-       title: "Erreur",
-       description: "Veuillez remplir tous les champs obligatoires",
-       variant: "destructive",
-     });
-     return;
-   }
-   const serviceBrand = formData.service.category === 'jardinage' ? 'atoigreen' : 'atoifix';
-   try {
-     const docRef = await addDoc(collection(db, "requests"), {
-      clientId: user.id,
-      clientName: user.name,
-      title: formData.service.name,
-      category: formData.service.category,
-      description: formData.description,
-      location: formData.location,
-      surface: parseFloat(formData.surface),
-      urgency: formData.urgency === 'urgent' ? 'high' : 'low',
-      isExpress: formData.isExpress,
-      ecoOptions: formData.ecoOptions,
-      priceOriginal: estimatedPrice,
-      status: "pending",
-      createdAt: new Date()
-    });
-     if (formData.photos.length > 0) {
-       const photoURLs: string[] = [];
-       for (const [index, photo] of formData.photos.entries()) {
-         const ext = photo.name.split('.').pop();
-         const photoRef = ref(storage, `requestPhotos/${docRef.id}/${index}.${ext}`);
-         await uploadBytes(photoRef, photo);
-         const url = await getDownloadURL(photoRef);
-         photoURLs.push(url);
-       }
-       await updateDoc(docRef, { photos: photoURLs });
-     }
+    e.preventDefault();
+    
+    if (!formData.service || !formData.location.address || !formData.description || !estimatedPrice) {
+      return;
+    }
+    const serviceBrand = formData.service.category === 'jardinage' ? 'atoigreen' : 'atoifix';
+    try {
+      const docRef = await addDoc(collection(db, "requests"), {
+        clientId: user.id,
+        clientName: user.name,
+        title: formData.service.name,
+        category: formData.service.category,
+        description: formData.description,
+        location: formData.location,
+        surface: Number(formData.surface),
+        urgency: formData.urgency === 'urgent' ? 'high' : 'low',
+        isExpress: formData.isExpress,
+        ecoOptions: formData.ecoOptions,
+        priceOriginal: estimatedPrice,
+        status: "pending" as RequestStatus,
+        createdAt: new Timestamp(0, new Date().getTime() * 1e6)
+      } as Request);
+      if (formData.photos.length > 0) {
+        const photoURLs: string[] = [];
+        formData.photos.forEach(async (photo) => {
+          const url: string = await uploadRequest(photo, docRef.id) as string;
+          photoURLs.push(url)
+        })
+        await updateDoc(docRef, { photos: photoURLs });
+      }
    } catch (error) {
      console.error("Erreur création de demande :", error);
      toast({

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserProvider } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Leaf, User, CheckCircle, Clock, Euro, Settings, BarChart3, 
@@ -18,29 +18,13 @@ import { db } from "@/firebaseConfig";
 import { Request } from "@/types/requests";
 import Loader from "@/components/loader/Loader";
 
-function useProfile(uid: string | undefined) {
-  const [profile, setProfile] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!uid) return;
-    const unsubscribe = onSnapshot(doc(db, "profiles", uid), (snap) => {
-      setProfile(snap.data() ?? null);
-      setLoading(false);
-    });
-    return unsubscribe;
-  }, [uid]);
-
-  return { profile, loading };
-}
-
-function useMissions(uid: string | undefined) {
+function useMissions(uid: string | undefined, setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
   const [available, setAvailable] = useState<Request[]>([]);
   const [mine, setMine] = useState<Request[]>([]);
   const [note, setNote] = useState<number>(null)
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const qAvailable = query(
       collection(db, "requests"),
       where("status", "==", "pending")
@@ -76,15 +60,16 @@ function useMissions(uid: string | undefined) {
     return unsub1;
   }, [uid]);
 
-  return { available, mine, loading, note };
+  return { available, mine, note };
 }
 
 const ProviderDashboard = () => {
-  const { user, logout } = useAuth();
+  const { u, logout } = useAuth();
+  const user: UserProvider = u as UserProvider;
   const navigate = useNavigate();
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
-  const { profile, loading: profileLoading } = useProfile(user?.id);
-  const { available, mine, loading, note } = useMissions(user?.id);
+  const [loading, setLoading] = useState(true);
+  const { available, mine, note } = useMissions(user?.id, setLoading);
   
   const stats = useMemo(() => {
     const completed = mine.filter((m) => m.status === "completed");
@@ -242,7 +227,7 @@ const ProviderDashboard = () => {
               />
             </Link>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-600">Bonjour, {user.name}</span>
+              <span className="text-gray-600">Bonjour, {user?.name ? user.name : ""}</span>
               <Link to="/provider/profile">
                 <Button variant="outline" size="sm">
                   <User className="h-4 w-4 mr-2" />
@@ -391,10 +376,10 @@ const ProviderDashboard = () => {
                     <CardTitle>Statut du profil</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-2 mb-4">
+                    {user?.verified && (<div className="flex items-center gap-2 mb-4">
                       <CheckCircle className="h-5 w-5 text-green-600" />
                       <span className="font-medium text-green-600">Profil vérifié</span>
-                    </div>
+                    </div>)}
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Note moyenne</span>
@@ -433,7 +418,7 @@ const ProviderDashboard = () => {
           </TabsContent>
 
           <TabsContent value="earnings">
-            <EarningsTracker />
+            <EarningsTracker setLoading={setLoading} />
           </TabsContent>
         </Tabs>
       </div>

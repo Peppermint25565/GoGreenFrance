@@ -20,34 +20,35 @@ export interface UserProvider {
   id: string;
   role: UserRole;
   avatar?: string;
-  name: string,
-  email: string,
-  phone: string,
-  address: string,
-  specializations: string[],
-  zone: string,
-  hourlyRate: number,
-  description: string,
+  verified: boolean;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  specializations: string[];
+  zone: string;
+  hourlyRate: number;
+  description: string;
   availability: {
-    monday: boolean,
-    tuesday: boolean,
-    wednesday: boolean,
-    thursday: boolean,
-    friday: boolean,
-    saturday: boolean,
-    sunday: boolean,
-  }
+    monday: boolean;
+    tuesday: boolean;
+    wednesday: boolean;
+    thursday: boolean;
+    friday: boolean;
+    saturday: boolean;
+    sunday: boolean;
+  };
 }
 interface AuthContextType {
-  user: UserClient | UserProvider | null;
-  login: (email: string, password: string) => Promise<void>;
+  u: UserClient | UserProvider | null;
+  login: (email: string, password: string) => Promise<UserClient | UserProvider>;
   register: (
     email: string, 
     password: string, 
     name: string, 
     role: UserRole, 
     avatarFile?: File | null
-  ) => Promise<void>;
+  ) => Promise<UserClient | UserProvider>;
   logout: () => Promise<void>;
   loading: boolean;
   changeAvatar: (
@@ -72,8 +73,8 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const cached = localStorage.getItem("user");
-  const [user, setUser] = useState<UserClient | UserProvider | null>(
-    cached != "undefined" ? JSON.parse(cached) : null
+  const [u, setUser] = useState<UserClient | UserProvider | null>(
+    cached && cached != "undefined" ? (JSON.parse(cached)?.role == 0 || JSON.parse(cached)?.role == 2 ? JSON.parse(cached) as UserClient : JSON.parse(cached) as UserProvider) : null
   );
   const [loading, setLoading] = useState(true);
 
@@ -95,13 +96,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               role: data.role as UserRole,
               avatar: data.avatar || undefined,
             } as UserClient;
-          } else if (data.role == 2) {
+          } else if (data.role == 1) {
             currentUser = {
               id: firebaseUser.uid,
               email: firebaseUser.email,
               name: data.name,
               role: data.role as UserRole,
               avatar: data.avatar || undefined,
+              verified: false,
             } as UserProvider;
           }
           setUser(currentUser);
@@ -144,10 +146,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: data.name,
           role: data.role as UserRole,
           avatar: data.avatar || undefined,
+          verified: data.verfied,
         } as UserProvider;
       }
       setUser(currentUser);
       localStorage.setItem("user", JSON.stringify(currentUser));
+      return currentUser
     } catch (error) {
       console.error("Erreur login :", error);
       throw error;
@@ -200,10 +204,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: name,
           role: role,
           avatar: photoURL,
+          verified: false,
         } as UserProvider;
       }
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
+      return newUser
     } catch (error) {
       console.error("Erreur inscription :", error);
       throw error;
@@ -244,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profileData: any
   ) => {
     if (avatarFile) {
-      const storageRef = ref(storage, `avatars/${user.id}`);
+      const storageRef = ref(storage, `avatars/${u.id}`);
       await uploadBytes(storageRef, avatarFile);
       let photoURL = await getDownloadURL(storageRef);
         const dataToSave = {
@@ -258,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: Date.now(),
     };
 
-    await setDoc(doc(db, 'profiles', user.id), dataToSave, { merge: true });
+    await setDoc(doc(db, 'profiles', u.id), dataToSave, { merge: true });
   }
 
   const fetchClientDashboard = async (
@@ -279,7 +285,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading, changeAvatar, updateProviderProfile, fetchClientDashboard }}>
+    <AuthContext.Provider value={{ u, login, register, logout, loading, changeAvatar, updateProviderProfile, fetchClientDashboard }}>
       {children}
     </AuthContext.Provider>
   );

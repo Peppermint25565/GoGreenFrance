@@ -19,7 +19,8 @@ import { getProfilePictureUrl } from "@/supabase";
 import { UserProfile } from "firebase/auth";
 
 const ProviderProfile = () => {
-  const { user, logout, changeAvatar, updateProviderProfile } = useAuth();
+  const { u, logout, changeAvatar, updateProviderProfile } = useAuth();
+  const user: UserProvider = u as UserProvider;
   const navigate = useNavigate();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(getProfilePictureUrl(user.id));

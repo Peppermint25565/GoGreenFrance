@@ -14,7 +14,6 @@ import OrderHistory from "./pages/client/OrderHistory";
 import MissionTracking from "./pages/client/MissionTracking";
 import ProviderDashboard from "./pages/provider/ProviderDashboard";
 import ProviderProfile from "./pages/provider/ProviderProfile";
-import ProviderStats from "./pages/provider/ProviderStats";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -45,7 +44,6 @@ const App = () => (
             <Route path="/client/mission/:missionId" element={<MissionTracking />} />
             <Route path="/provider/dashboard" element={<ProviderDashboard />} />
             <Route path="/provider/profile" element={<ProviderProfile />} />
-            <Route path="/provider/stats" element={<ProviderStats />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:requestId" element={<Chat />} />

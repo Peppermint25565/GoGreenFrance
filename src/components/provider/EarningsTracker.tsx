@@ -7,16 +7,20 @@ import { Request } from "@/types/requests";
 import { useEffect, useState } from "react";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserProvider } from "@/contexts/AuthContext";
+import { UserProfile } from "firebase/auth";
+import React from "react";
 
-const EarningsTracker = () => {
-  const { user } = useAuth();
+const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetStateAction<boolean>>}) => {
+  const { u } = useAuth();
+  const user: UserProvider = u as UserProvider;
   const [recentEarnings, setRecentEarnings] = useState<Request[]>([]);
   const [totalEarned, setTotalEarned] = useState<number>(0);
   const [countRequests, setCountRequests] = useState<number>(0);
   const [avgEarn, setAvgEarning] = useState<number>(0);
 
   useEffect(() => {
+    setLoading(true);
     const func = async () => {
       const q = query(
         collection(db, "requests"),
@@ -34,6 +38,7 @@ const EarningsTracker = () => {
       });
       setTotalEarned(total)
       setAvgEarning(total / array.length)
+      setLoading(false);
     }
     func()
   }, [])

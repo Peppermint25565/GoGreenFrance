@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, ArrowLeft, User } from "lucide-react";
@@ -7,27 +7,28 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import OrderHistory from "@/components/client/OrderHistory";
 import RatingModal from "@/components/client/RatingModal";
+import Loader from "@/components/loader/Loader";
+
+interface RatingModal {
+  isOpen: boolean;
+  orderId: string;
+  providerName: string;
+  serviceName: string;
+}
 
 const OrderHistoryPage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [ratingModal, setRatingModal] = useState<{
-    isOpen: boolean;
-    orderId: string;
-    providerName: string;
-    serviceName: string;
-  }>({
-    isOpen: false,
-    orderId: "",
-    providerName: "",
-    serviceName: ""
-  });
+  const [loading, setLoading] = useState<boolean>(true);
+  const [ratingModal, setRatingModal] = useState<RatingModal>(null);
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return null;
+    }
+  },  [])
 
   const handleViewDetails = (orderId: string) => {
     navigate(`/client/order/${orderId}`);
@@ -66,6 +67,8 @@ const OrderHistoryPage = () => {
   };
 
   return (
+    <>
+    {loading && <Loader />}
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
@@ -104,6 +107,7 @@ const OrderHistoryPage = () => {
           </div>
 
           <OrderHistory
+            setLoading={setLoading}
             onViewDetails={handleViewDetails}
             onDownloadInvoice={handleDownloadInvoice}
             onRateProvider={handleRateProvider}
@@ -111,7 +115,7 @@ const OrderHistoryPage = () => {
         </div>
       </div>
     </div>
-  );
+  </>);
 };
 
 export default OrderHistoryPage;

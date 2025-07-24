@@ -12,25 +12,19 @@ import { Leaf, ArrowLeft, MessageSquare, Star, Clock, CheckCircle, XCircle, Plus
 import { useToast } from "@/hooks/use-toast";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
+import Loader from "@/components/loader/Loader";
 
 
 const MyRequests = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
   const [selectedFilter, setSelectedFilter] = useState("Tous");
   const [rating, setRating] = useState(0);
   const [ratingComment, setRatingComment] = useState("");
-
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
   const [requestsData, setRequestsData] = useState<any[]>([]);
-
   const filterOptions = ["Tous", "En attente", "En cours", "Terminé", "Annulé"];
+  const [loading, setLoading] = useState<boolean>(true);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -51,6 +45,13 @@ const MyRequests = () => {
       default: return null;
     }
   };
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return null;
+    }
+  }, [])
 
   const handleRating = (requestId: number, stars: number) => {
     setRating(stars);
@@ -85,6 +86,7 @@ const MyRequests = () => {
        );
        const snap = await getDocs(q);
        setRequestsData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+       setLoading(false);
      };
  
      fetchRequests();
@@ -109,6 +111,8 @@ const MyRequests = () => {
          });
 
   return (
+    <>
+    {loading && (<Loader />)}
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
@@ -308,7 +312,7 @@ const MyRequests = () => {
         </div>
       </div>
     </div>
-  );
+  </>);
 };
 
 export default MyRequests;

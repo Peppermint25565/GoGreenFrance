@@ -115,7 +115,7 @@ const KYCVerification = () => {
               <div className="space-y-3">
                 <div className="grid w-full max-w-sm items-center gap-1.5">
                   <Label htmlFor={`file-${step.id}`}>Télécharger le document</Label>
-                  <Input id={`file-${step.id}`} type="file" accept="image/*,.pdf" />
+                  <Input id={`file-${step.id}`} type="file" accept=".pdf" />
                 </div>
                 <Button size="sm">
                   <Upload className="h-4 w-4 mr-2" />

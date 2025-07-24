@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { useAuth, UserProvider, UserRole } from "@/contexts/AuthContext";
 import { User, Wrench, Upload, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
@@ -48,12 +48,24 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(email, password, name, role, avatarFile);
-      toast({
-        title: "Inscription réussie",
-        description: "Votre compte a été créé.",
-      });
-      navigate("/client/dashboard");
+      const user = await register(email, password, name, role, avatarFile);
+      if (user.role == 0) {
+        toast({
+          title: "Bienvenue",
+          description: "N'hesitez pas a crée votre premiere offre sur votre dashboard",
+        });
+        navigate("/client/dashboard");
+      } else if (user.role == 1) {
+        if (!(user as UserProvider)?.verified) {
+          toast({
+            title: "Bienvenue",
+            description: "Dans un premier temps vous devrez etre verifier avant de pouvoir accepter des offres. Merci de vous rentre dans les sections Profile et Verifications pour configurer votre compte et uploder les justificatif necessaire",
+          });
+        }
+        navigate("/provider/dashboard");
+      } else if (user.role == 2) { 
+        navigate("/admin/dashboard");
+      }
     } catch (err) {
       let description = "Erreur inconnue.";
       if (err instanceof FirebaseError) {

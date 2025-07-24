@@ -15,11 +15,11 @@ interface OrderHistoryProps {
   onViewDetails: (orderId: string) => void;
   onDownloadInvoice: (orderId: string) => void;
   onRateProvider: (orderId: string) => void;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-function useOrders() {
+function useOrders(setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
   const [orders, setOrders] = useState<Request[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -36,11 +36,11 @@ function useOrders() {
     })();
   }, []);
 
-  return { orders, loading };
+  return { orders };
 }
 
-const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider }: OrderHistoryProps) => {
-  const { orders } = useOrders();
+const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider, setLoading }: OrderHistoryProps) => {
+  const { orders } = useOrders(setLoading);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");

@@ -17,6 +17,20 @@ export async function uploadProfilePictures(file: File, uid: string) {
   }
 }
 
+export async function uploadRequest(file: File, requestId: string) {
+  const { data, error } = await supabase.storage.from('requests').upload('/' + requestId, file)
+  if (error) {
+    console.log(error);
+    return false;
+  } else {
+    return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/request/${requestId}`
+  }
+}
+
 export function getProfilePictureUrl(uid: string) {
   return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/profile_pictures/${uid}`
+}
+
+export function getRequestImgUrl(requestId: string) {
+  return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/requests/${requestId}`
 }
