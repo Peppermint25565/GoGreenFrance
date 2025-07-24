@@ -1,26 +1,28 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserProvider } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Wrench, Upload, Camera, ArrowLeft, Save } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { db, storage } from '@/firebaseConfig';
-import { doc, setDoc }   from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from "@/hooks/use-toast";
 import { profile } from "console";
+import { doc, getDoc } from "firebase/firestore";
+import { getProfilePictureUrl } from "@/supabase";
+import { UserProfile } from "firebase/auth";
 
 const ProviderProfile = () => {
   const { user, logout, changeAvatar, updateProviderProfile } = useAuth();
   const navigate = useNavigate();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(getProfilePictureUrl(user.id));
   const { toast } = useToast();
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,26 +34,15 @@ const ProviderProfile = () => {
     }
   };
 
+  const [profileData, setProfileData] = useState<UserProvider>(null);
 
-  const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: '',
-    address: '',
-    specializations: ['jardinage'],
-    zone: '',
-    hourlyRate: '',
-    description: '',
-    availability: {
-      monday: true,
-      tuesday: true,
-      wednesday: true,
-      thursday: true,
-      friday: true,
-      saturday: true,
-      sunday: false
+  useEffect(() => {
+    const getProfileData = async () => {
+      const data = await getDoc(doc(db, "profiles", user.id));
+      setProfileData(data.data() as UserProvider)
     }
-  });
+    getProfileData()
+  }, [])
 
   if (!user) {
     navigate("/login");
@@ -203,7 +194,7 @@ const ProviderProfile = () => {
                       id="hourlyRate"
                       type="number"
                       value={profileData.hourlyRate}
-                      onChange={(e) => setProfileData({ ...profileData, hourlyRate: e.target.value })}
+                      onChange={(e) => setProfileData({ ...profileData, hourlyRate: Number(e.target.value) })}
                       placeholder="25"
                     />
                   </div>
@@ -238,7 +229,7 @@ const ProviderProfile = () => {
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="jardinage"
-                        checked={profileData.specializations.includes('jardinage')}
+                        checked={profileData.specializations?.includes('jardinage')}
                         onCheckedChange={(checked) => handleSpecializationChange('jardinage', checked as boolean)}
                       />
                       <Label htmlFor="jardinage">Jardinage</Label>
@@ -246,7 +237,7 @@ const ProviderProfile = () => {
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="bricolage"
-                        checked={profileData.specializations.includes('bricolage')}
+                        checked={profileData.specializations?.includes('bricolage')}
                         onCheckedChange={(checked) => handleSpecializationChange('bricolage', checked as boolean)}
                       />
                       <Label htmlFor="bricolage">Bricolage</Label>
@@ -270,7 +261,7 @@ const ProviderProfile = () => {
                 <div>
                   <Label className="text-base font-medium">Disponibilités</Label>
                   <div className="mt-2 grid grid-cols-2 gap-2">
-                    {Object.entries(profileData.availability).map(([day, available]) => (
+                    {profileData.availability && Object.entries(profileData.availability).map(([day, available]) => (
                       <div key={day} className="flex items-center space-x-2">
                         <Checkbox
                           id={day}

@@ -1,0 +1,22 @@
+import { createClient } from '@supabase/supabase-js'
+
+export const supabase = createClient(import.meta.env.VITE_SUPABASE_PROJECT_URL, import.meta.env.VITE_SUPABASE_API_KEY)
+export interface UploadData {
+  id: string;
+  path: string;
+  fullPath: string;
+}
+
+export async function uploadProfilePictures(file: File, uid: string) {
+  const { data, error } = await supabase.storage.from('profile_pictures').upload('/' + uid, file)
+  if (error) {
+    console.log(error);
+    return false;
+  } else {
+    return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/profile_pictures/${uid}`
+  }
+}
+
+export function getProfilePictureUrl(uid: string) {
+  return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/profile_pictures/${uid}`
+}

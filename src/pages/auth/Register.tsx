@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,13 +13,17 @@ import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 
 const Register = () => {
+  const queryParameters = new URLSearchParams(window.location.search);
+  const type = Number(queryParameters.get("type"));
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState("client");
+  const [role, setRole] = useState<0 | 1 | 2>(type as UserRole);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [firstValidate, setFirstValidate] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -37,19 +40,15 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    setFirstValidate(true);
     if (!acceptTerms) {
-      toast({
-        title: "Acceptation requise",
-        description: "Vous devez accepter les Conditions Générales de Service pour continuer.",
-        variant: "destructive",
-      });
       return;
     }
 
     setLoading(true);
 
     try {
-      await register(email, password, name, role === "client" ? 0 : 1, avatarFile);
+      await register(email, password, name, role, avatarFile);
       toast({
         title: "Inscription réussie",
         description: "Votre compte a été créé.",
@@ -171,9 +170,9 @@ const Register = () => {
               
               <div className="space-y-3">
                 <Label>Type de compte</Label>
-                <RadioGroup value={role} onValueChange={(value) => setRole(value)}>
+                <RadioGroup value={role.toString()} onValueChange={(value) => setRole(Number(value) as UserRole)}>
                   <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                    <RadioGroupItem value="client" id="client" />
+                    <RadioGroupItem value="0" id="client" />
                     <User className="h-5 w-5 text-blue-500" />
                     <div>
                       <Label htmlFor="client" className="font-medium">Client</Label>
@@ -181,7 +180,7 @@ const Register = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                    <RadioGroupItem value="provider" id="provider" />
+                    <RadioGroupItem value="1" id="provider" />
                     <Wrench className="h-5 w-5 text-green-500" />
                     <div>
                       <Label htmlFor="provider" className="font-medium">Prestataire</Label>
@@ -193,11 +192,11 @@ const Register = () => {
 
               {/* Case à cocher obligatoire pour les CGS */}
               <div className="space-y-3">
-                <div className={`flex items-start space-x-3 p-4 border rounded-lg ${!acceptTerms ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
+                <div className={`flex items-start space-x-3 p-4 border rounded-lg ${(!acceptTerms && firstValidate) ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
                   <Checkbox
                     id="accept-terms"
-                    checked={acceptTerms}
-                    onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                    checked={acceptTerms && firstValidate}
+                    onCheckedChange={(checked) => {setAcceptTerms(checked as boolean); setFirstValidate(checked as boolean)}}
                     className="mt-1"
                   />
                   <div className="flex-1">
@@ -217,7 +216,7 @@ const Register = () => {
                     </p>
                   </div>
                 </div>
-                {!acceptTerms && (
+                {(!acceptTerms && firstValidate) && (
                   <p className="text-xs text-red-600">
                     L'acceptation des CGS est obligatoire pour créer un compte.
                   </p>
@@ -227,7 +226,6 @@ const Register = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={loading || !acceptTerms}
               >
                 {loading ? "Création..." : "Créer mon compte"}
               </Button>

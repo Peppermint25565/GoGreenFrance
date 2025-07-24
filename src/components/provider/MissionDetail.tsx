@@ -10,7 +10,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/firebaseConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Request, RequestStatus } from "@/types/requests";
+import { PriceAdjustment, Request, RequestStatus } from "@/types/requests";
 
 interface MissionDetailProps {
   mission: Request;
@@ -54,7 +54,7 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         return;
       }
       const adjRef = await addDoc(collection(db, "priceAdjustments"), {
-        missionId: mission.id,
+        requestId: mission.id,
         providerId: user.id,
         providerName: user.name,
         serviceName: mission.title,
@@ -65,7 +65,7 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         videos: [] as string[],
         timestamp: new Date(),
         status: "pending"
-      });
+      } as PriceAdjustment);
       if (adjustment.photos.length > 0) {
         const photoURLs: string[] = [];
         for (const [index, photo] of adjustment.photos.entries()) {

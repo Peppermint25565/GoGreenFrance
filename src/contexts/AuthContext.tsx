@@ -5,18 +5,41 @@ import {
 } from "firebase/auth";
 import { collection, doc, DocumentData, getDoc, getDocs, query, QuerySnapshot, setDoc, updateDoc, where } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth, db, storage } from "@/firebaseConfig";  // Ajuster le chemin si besoin
+import { auth, db, storage } from "@/firebaseConfig";
+import { UploadData, uploadProfilePictures } from '@/supabase';
 
 export type UserRole = 0 | 1 | 2;
-export interface User {
+export interface UserClient {
   id: string;
   email: string | null;
   name: string;
   role: UserRole;
   avatar?: string;
 }
+export interface UserProvider {
+  id: string;
+  role: UserRole;
+  avatar?: string;
+  name: string,
+  email: string,
+  phone: string,
+  address: string,
+  specializations: string[],
+  zone: string,
+  hourlyRate: number,
+  description: string,
+  availability: {
+    monday: boolean,
+    tuesday: boolean,
+    wednesday: boolean,
+    thursday: boolean,
+    friday: boolean,
+    saturday: boolean,
+    sunday: boolean,
+  }
+}
 interface AuthContextType {
-  user: User | null;
+  user: UserClient | UserProvider | null;
   login: (email: string, password: string) => Promise<void>;
   register: (
     email: string, 
@@ -49,8 +72,8 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const cached = localStorage.getItem("user");
-  const [user, setUser] = useState<User | null>(
-    cached ? JSON.parse(cached) : null
+  const [user, setUser] = useState<UserClient | UserProvider | null>(
+    cached != "undefined" ? JSON.parse(cached) : null
   );
   const [loading, setLoading] = useState(true);
 
@@ -63,13 +86,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const currentUser: User = {
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: data.name,
-            role: data.role as UserRole,
-            avatar: data.avatar || undefined,
-          };
+          let currentUser: UserClient | UserProvider;
+          if (data.role == 0 || data.role == 2) {
+            currentUser = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: data.name,
+              role: data.role as UserRole,
+              avatar: data.avatar || undefined,
+            } as UserClient;
+          } else if (data.role == 2) {
+            currentUser = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: data.name,
+              role: data.role as UserRole,
+              avatar: data.avatar || undefined,
+            } as UserProvider;
+          }
           setUser(currentUser);
           localStorage.setItem("user", JSON.stringify(currentUser));
         }
@@ -94,13 +128,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) throw new Error("Profil introuvable.");
       const data = docSnap.data();
-      const currentUser: User = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email,
-        name: data.name,
-        role: data.role as UserRole,
-        avatar: data.avatar || undefined,
-      };
+      let currentUser: UserClient | UserProvider;
+      if (data.role == 0 || data.role == 2) {
+        currentUser = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: data.name,
+          role: data.role as UserRole,
+          avatar: data.avatar || undefined,
+        } as UserClient;
+      } else if (data.role == 1) {
+        currentUser = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: data.name,
+          role: data.role as UserRole,
+          avatar: data.avatar || undefined,
+        } as UserProvider;
+      }
       setUser(currentUser);
       localStorage.setItem("user", JSON.stringify(currentUser));
     } catch (error) {
@@ -128,10 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Upload de l'avatar si fourni
       if (avatarFile) {
-        const ext = avatarFile.name.split('.').pop();
-        const fileRef = ref(storage, `avatars/${firebaseUser.uid}.${ext}`);
-        await uploadBytes(fileRef, avatarFile);
-        photoURL = await getDownloadURL(fileRef);
+        photoURL = await uploadProfilePictures(avatarFile, firebaseUser.uid) as string;
       }
 
       // Création du profil dans Firestore
@@ -142,13 +184,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar: photoURL,
       });
 
-      const newUser: User = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email,
-        name: name,
-        role: role,
-        avatar: photoURL,
-      };
+      let newUser: UserClient | UserProvider;
+      if (role == 0) {
+        newUser = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: name,
+          role: role,
+          avatar: photoURL,
+        } as UserClient;
+      } else if (role == 1) {
+        newUser = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: name,
+          role: role,
+          avatar: photoURL,
+        } as UserProvider;
+      }
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
     } catch (error) {
@@ -190,12 +243,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     avatarFile: File,
     profileData: any
   ) => {
-    const storageRef = ref(storage, `avatars/${user.id}`);
-    await uploadBytes(storageRef, avatarFile);
-    let photoURL = await getDownloadURL(storageRef);
+    if (avatarFile) {
+      const storageRef = ref(storage, `avatars/${user.id}`);
+      await uploadBytes(storageRef, avatarFile);
+      let photoURL = await getDownloadURL(storageRef);
+        const dataToSave = {
+        ...profileData,
+        photoURL,
+        updatedAt: Date.now(),
+      };
+    }
     const dataToSave = {
       ...profileData,
-      photoURL,
       updatedAt: Date.now(),
     };
 

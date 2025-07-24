@@ -14,12 +14,13 @@ import {
 } from 'firebase/auth';
 import { auth } from "@/firebaseConfig";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { getProfilePictureUrl } from "@/supabase";
 
 const ClientProfile = () => {
   const { user, logout, changeAvatar } = useAuth();
   const navigate = useNavigate();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(getProfilePictureUrl(user.id));
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',

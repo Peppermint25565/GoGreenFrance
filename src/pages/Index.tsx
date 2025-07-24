@@ -24,7 +24,7 @@ const Index = () => {
               <Link to="/login">
                 <Button variant="outline">Connexion</Button>
               </Link>
-              <Link to="/register">
+              <Link to="/register?type=0">
                 <Button className="bg-green-600 hover:bg-green-700">S'inscrire</Button>
               </Link>
             </div>
@@ -44,12 +44,12 @@ const Index = () => {
             Paiement sécurisé, chat intégré, intervention rapide garantie.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register">
+            <Link to="/register?type=0">
               <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg">
                 Commencer maintenant
               </Button>
             </Link>
-            <Link to="/register">
+            <Link to="/register?type=1">
               <Button size="lg" variant="outline" className="px-8 py-4 text-lg">
                 Devenir prestataire
               </Button>
@@ -212,9 +212,9 @@ const Index = () => {
             <div>
               <h4 className="font-semibold mb-4">Services</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link to="/register" className="hover:text-white transition-colors">Jardinage</Link></li>
-                <li><Link to="/register" className="hover:text-white transition-colors">Bricolage</Link></li>
-                <li><Link to="/register" className="hover:text-white transition-colors">Intervention rapide</Link></li>
+                <li><Link to="/register?type=0" className="hover:text-white transition-colors">Jardinage</Link></li>
+                <li><Link to="/register?type=0" className="hover:text-white transition-colors">Bricolage</Link></li>
+                <li><Link to="/register?type=0" className="hover:text-white transition-colors">Intervention rapide</Link></li>
               </ul>
             </div>
             <div>

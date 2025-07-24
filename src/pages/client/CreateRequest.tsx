@@ -129,7 +129,7 @@ const CreateRequest = () => {
   const handleSubmit = async (e: React.FormEvent) => {
    e.preventDefault();
    
-   if (!formData.service || !formData.location.address || !formData.description) {
+   if (!formData.service || !formData.location.address || !formData.description || !estimatedPrice) {
      toast({
        title: "Erreur",
        description: "Veuillez remplir tous les champs obligatoires",

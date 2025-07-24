@@ -16,6 +16,7 @@ import EarningsTracker from "@/components/provider/EarningsTracker";
 import { collection, doc, onSnapshot, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { Request } from "@/types/requests";
+import Loader from "@/components/loader/Loader";
 
 function useProfile(uid: string | undefined) {
   const [profile, setProfile] = useState<any | null>(null);
@@ -51,8 +52,7 @@ function useMissions(uid: string | undefined) {
     if (uid) {
       const qMine = query(
         collection(db, "requests"),
-        where("providerId", "==", uid),
-        where("status", "in", ["accepted", "in_progress"])
+        where("providerId", "==", uid)
       );
       const unsub2 = onSnapshot(qMine, (snap) => {
         setMine(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) })));
@@ -83,24 +83,12 @@ const ProviderDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    if (user.role === 0) navigate("/client/dashboard");
-    else if (user.role === 2) navigate("/admin/dashboard");
-  }, [user]);
-
   const { profile, loading: profileLoading } = useProfile(user?.id);
-  const { available, mine, loading: missionsLoading, note } = useMissions(user?.id);
-
+  const { available, mine, loading, note } = useMissions(user?.id);
+  
   const stats = useMemo(() => {
     const completed = mine.filter((m) => m.status === "completed");
     const inProgress = mine.filter((m) => m.status === "in_progress");
-
-    // revenus ce mois
     const now = new Date();
     const month = now.getMonth();
     const year = now.getFullYear();
@@ -110,13 +98,21 @@ const ProviderDashboard = () => {
         return d.getMonth() === month && d.getFullYear() === year;
       })
       .reduce((sum, m) => sum + m.priceOriginal, 0);
-
     return {
       completedCount: completed.length,
       inProgressCount: inProgress.length,
       revenueThisMonth,
     };
   }, [mine]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (user.role === 0) navigate("/client/dashboard");
+    else if (user.role === 2) navigate("/admin/dashboard");
+  }, [user]);
 
   const handleAcceptMission = async (mission: Request) => {
     await updateDoc(doc(db, "requests", mission.id), {
@@ -218,9 +214,21 @@ const ProviderDashboard = () => {
     const pad = (n: number) => n.toString().padStart(2, "0");
     return `${hours} h ${pad(minutes)} min ${pad(seconds)} s`;
   }
+
+  function isEnded(
+    startDate: Date,
+    hoursToAdd: number
+  ): boolean {
+    const target = new Date(startDate.getTime() + hoursToAdd * 60 * 60 * 1000);
+    const diffMs = target.getTime() - Date.now();
+    if (diffMs <= 0) return true;
+    return false
+  }
   
 
   return (
+    <>
+    {loading && (<Loader />)}
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
@@ -280,7 +288,7 @@ const ProviderDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {available.map((request) => (
+                      {available.map((request) => !isEnded(request.createdAt.toDate(), request.urgency === "low" ? 12 : (request.urgency === "high" ? 3 : 6)) && (
                         <div key={request.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                           <div className="flex justify-between items-start mb-3">
                             <div className="flex-1">
@@ -336,7 +344,7 @@ const ProviderDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {mine.map((job) => (
+                      {mine.map((job) => job.status != "completed" && (
                         <div key={job.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
@@ -430,7 +438,7 @@ const ProviderDashboard = () => {
         </Tabs>
       </div>
     </div>
-  );
+ </>);
 };
 
 export default ProviderDashboard;

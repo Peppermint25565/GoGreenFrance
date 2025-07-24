@@ -11,6 +11,7 @@ import { db } from "@/firebaseConfig";
 import PriceAdjustmentNotification from "@/components/client/PriceAdjustmentNotification";
 import { useToast } from "@/hooks/use-toast";
 import { PriceAdjustment } from "@/types/requests";
+import Loader from "@/components/loader/Loader";
 
 const ClientDashboard = () => {
   const { user, logout, fetchClientDashboard } = useAuth();
@@ -20,6 +21,7 @@ const ClientDashboard = () => {
   const [completedServicesCount, setCompletedServicesCount] = useState(0);
   const [averageRating, setAverageRating] = useState<number | string>("–");
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(()=>{
     if (!user) {
@@ -78,6 +80,7 @@ const ClientDashboard = () => {
        setCompletedServicesCount(completed);
        setAverageRating(rated ? (sumRatings / rated).toFixed(1) : "–");
        setRecentRequests(recentSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+       setLoading(false);
      };
  
      fetchData();
@@ -92,9 +95,13 @@ const ClientDashboard = () => {
       const reqQuery = query(collection(db, "requests"), where("clientId", "==", user.id));
       const reqSnapshot = await getDocs(reqQuery);
       for (const reqDoc of reqSnapshot.docs) {
-        const adjQuery = query(collection(db, "priceAdjustments"), where("requestId", "==", reqDoc.id));
-        const adjSnapshot = await getDocs(adjQuery);
-        adjSnapshot.forEach(adjDoc => {adjDoc.data() as PriceAdjustment});
+        try {
+          const adjQuery = query(collection(db, "priceAdjustments"), where("requestId", "==", reqDoc.id));
+          const adjSnapshot = await getDocs(adjQuery);
+          adjSnapshot.forEach(adjDoc => adjustmentsArray.push(adjDoc.data() as PriceAdjustment));
+        } catch {
+
+        }
       }
       setPriceAdjustments(adjustmentsArray);
     };
@@ -163,6 +170,8 @@ const ClientDashboard = () => {
   const pendingAdjustments = priceAdjustments.filter(adj => adj.status === 'pending');
 
   return (
+    <>
+    {loading && (<Loader />)}
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
@@ -343,7 +352,7 @@ const ClientDashboard = () => {
         </div>
       </div>
     </div>
-  );
+  </>);
 };
 
 export default ClientDashboard;
