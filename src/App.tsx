@@ -11,7 +11,6 @@ import CreateRequest from "./pages/client/CreateRequest";
 import MyRequests from "./pages/client/MyRequests";
 import ClientStats from "./pages/client/ClientStats";
 import OrderHistory from "./pages/client/OrderHistory";
-import MissionTracking from "./pages/client/MissionTracking";
 import ProviderDashboard from "./pages/provider/ProviderDashboard";
 import ProviderProfile from "./pages/provider/ProviderProfile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -41,7 +40,6 @@ const App = () => (
             <Route path="/client/my-requests" element={<MyRequests />} />
             <Route path="/client/stats" element={<ClientStats />} />
             <Route path="/client/order-history" element={<OrderHistory />} />
-            <Route path="/client/mission/:missionId" element={<MissionTracking />} />
             <Route path="/provider/dashboard" element={<ProviderDashboard />} />
             <Route path="/provider/profile" element={<ProviderProfile />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
