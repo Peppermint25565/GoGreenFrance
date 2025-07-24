@@ -13,10 +13,11 @@ import {
 import KYCVerification from "@/components/provider/KYCVerification";
 import MissionDetail from "@/components/provider/MissionDetail";
 import EarningsTracker from "@/components/provider/EarningsTracker";
-import { collection, doc, onSnapshot, query, Timestamp, updateDoc, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { Request } from "@/types/requests";
 import Loader from "@/components/loader/Loader";
+import { uploadKyc } from "@/supabase";
 
 function useMissions(user: UserProvider, setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
   const [available, setAvailable] = useState<Request[]>([]);
@@ -68,12 +69,16 @@ function useMissions(user: UserProvider, setLoading: React.Dispatch<React.SetSta
 }
 
 const ProviderDashboard = () => {
+  const queryParameters = new URLSearchParams(window.location.search);
+  const tab = Number(queryParameters.get("tab"));
+
   const { u, logout } = useAuth();
   const user: UserProvider = u as UserProvider;
   const navigate = useNavigate();
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { available, mine, note } = useMissions(user, setLoading);
+  const [toUpload, setToUpload] = useState<{file: File, user: UserProvider, id: string}[]>([])
   
   const stats = useMemo(() => {
     const completed = mine.filter((m) => m.status === "completed");
@@ -213,8 +218,41 @@ const ProviderDashboard = () => {
     if (diffMs <= 0) return true;
     return false
   }
-  
 
+  const handleUploadFile = (event: React.ChangeEvent<HTMLInputElement>, step: any) => {
+    const files = Array.from(event.target.files || []);
+    setToUpload((e) => [...e, {file: files[0], user: user, id: step?.id}]);
+  };
+
+  const handleSubmitFile = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    event.preventDefault()
+    if (toUpload.length == 0)
+      return
+    setLoading(true);
+    const data = user.kyc;
+    toUpload.forEach(async (up) => {
+      const url: string = await uploadKyc(up.file, user.id, up.id);
+      if (up.id == 'identity') {
+        data.identity.url = url
+        data.identity.status = "in_review"
+      } else if (up.id == 'address') {
+        data.address.url = url;
+        data.address.status = "in_review"
+      } else if (up.id == "insurance") {
+        data.insurance.url = url
+        data.insurance.status = "in_review"
+      } else if (up.id == "bank") {
+        data.bank.url = url
+        data.insurance.status = "in_review"
+      }
+    })
+    console.log(data)
+    await updateDoc(doc(db, 'profiles', user.id), {kyc: data});
+    user.kyc = data;
+    setToUpload([])
+    setLoading(false);
+  };
+  
   return (
     <>
     {loading && (<Loader />)}
@@ -256,7 +294,7 @@ const ProviderDashboard = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="missions" className="space-y-6">
+        <Tabs defaultValue={tab == 0 ? "missions" : (tab == 1 ? "kyc" : (tab == 3 ? "earnings" : "missionsj"))} className="space-y-6">
           <TabsList className={`grid grid-cols-${user.verified ? 2 : 3} w-full max-w-2xl`}>
             <TabsTrigger value="missions">Missions</TabsTrigger>
             {!user.verified &&  (<TabsTrigger value="kyc">Vérification</TabsTrigger>)}
@@ -418,7 +456,7 @@ const ProviderDashboard = () => {
           </TabsContent>
 
           <TabsContent value="kyc">
-            <KYCVerification />
+            <KYCVerification user={user} handleSubmitFile={handleSubmitFile} handleUploadFile={handleUploadFile} />
           </TabsContent>
 
           <TabsContent value="earnings">

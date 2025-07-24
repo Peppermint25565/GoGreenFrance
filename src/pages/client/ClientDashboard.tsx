@@ -186,7 +186,7 @@ const ClientDashboard = () => {
             </Link>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <span className="text-gray-600">Bonjour, {user.name}</span>
+                <span className="text-gray-600">Bonjour, {user?.name ? user.name : ""}</span>
                 {pendingAdjustments.length > 0 && (
                   <div className="relative">
                     <Bell className="h-5 w-5 text-orange-500" />

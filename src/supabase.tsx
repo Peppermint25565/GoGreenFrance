@@ -34,3 +34,13 @@ export function getProfilePictureUrl(uid: string) {
 export function getRequestImgUrl(requestId: string) {
   return `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/requests/${requestId}`
 }
+
+export async function uploadKyc(file: File, providerId: string, docType: string) {
+  const filePath = `${providerId}/${docType}`;
+  const { data, error } = await supabase.storage.from('kyc-docs').upload(filePath, file);
+  if (error) {
+    throw error;
+  }
+  const { data: urlData } = supabase.storage.from('kyc-docs').getPublicUrl(filePath);
+  return urlData.publicUrl;
+}

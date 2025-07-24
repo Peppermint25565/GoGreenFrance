@@ -16,6 +16,7 @@ export interface UserClient {
   role: UserRole;
   avatar?: string;
 }
+export type KycStatus = 'not_started'|'in_review'|'verified';
 export interface UserProvider {
   id: string;
   role: UserRole;
@@ -37,6 +38,12 @@ export interface UserProvider {
     friday: boolean;
     saturday: boolean;
     sunday: boolean;
+  };
+  kyc: {
+    identity: { url: string, status: KycStatus },
+    address:  { url: string, status: KycStatus },
+    insurance:{ url: string, status: KycStatus },
+    bank:     { url: string, status: KycStatus }
   };
 }
 interface AuthContextType {
@@ -104,6 +111,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               role: data.role as UserRole,
               avatar: data.avatar || undefined,
               verified: data.verified,
+              phone: data.phone,
+              address: data.address,
+              specializations: data.specializations,
+              zone: data.zone,
+              description: data.description,
+              availability: {
+                monday: data.availability.monday,
+                tuesday: data.availability.tuesday,
+                wednesday: data.availability.wednesday,
+                thursday: data.availability.thursday,
+                friday: data.availability.friday,
+                saturday: data.availability.saturday,
+                sunday: data.availability.sunday,
+              },
+              kyc: {
+                identity: { url: data.kyc.identity.url, status: data.kyc.identity.status },
+                address:  { url: data.kyc.address.url, status: data.kyc.address.status },
+                insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status },
+                bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status }
+              }
             } as UserProvider;
           }
           setUser(currentUser);
@@ -146,7 +173,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: data.name,
           role: data.role as UserRole,
           avatar: data.avatar || undefined,
-          verified: data.verfied,
+          verified: data.verified,
+          phone: data.phone,
+          address: data.address,
+          specializations: data.specializations,
+          zone: data.zone,
+          description: data.description,
+          availability: {
+            monday: data.availability.monday,
+            tuesday: data.availability.tuesday,
+            wednesday: data.availability.wednesday,
+            thursday: data.availability.thursday,
+            friday: data.availability.friday,
+            saturday: data.availability.saturday,
+            sunday: data.availability.sunday,
+          },
+          kyc: {
+            identity: { url: data.kyc.identity.url, status: data.kyc.identity.status },
+            address:  { url: data.kyc.address.url, status: data.kyc.address.status },
+            insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status },
+            bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status }
+          } 
         } as UserProvider;
       }
       setUser(currentUser);
@@ -180,18 +227,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         photoURL = await uploadProfilePictures(avatarFile, firebaseUser.uid) as string;
       }
 
-      // Création du profil dans Firestore
-      await setDoc(doc(db, "profiles", firebaseUser.uid), {
-        name: name,
-        email: email,
-        role: role,
-        avatar: photoURL,
-      });
-
       let newUser: UserClient | UserProvider;
       if (role == 0) {
         newUser = {
-          id: firebaseUser.uid,
           email: firebaseUser.email,
           name: name,
           role: role,
@@ -205,8 +243,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: role,
           avatar: photoURL,
           verified: false,
+          phone: "",
+          address: "",
+          specializations: [],
+          zone: "",
+          description: "",
+          availability: {
+            monday: true,
+            tuesday: true,
+            wednesday: true,
+            thursday: true,
+            friday: true,
+            saturday: false,
+            sunday: false,
+          },
+          kyc: {
+            identity: { url: "", status: 'not_started' },
+            address:  { url: "", status: 'not_started' },
+            insurance:{ url: "", status: 'not_started' },
+            bank:     { url: "", status: 'not_started' }
+          }
         } as UserProvider;
       }
+
+      await setDoc(doc(db, "profiles", firebaseUser.uid), newUser);
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
       return newUser
