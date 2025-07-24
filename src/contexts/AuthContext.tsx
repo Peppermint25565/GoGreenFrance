@@ -103,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name: data.name,
               role: data.role as UserRole,
               avatar: data.avatar || undefined,
-              verified: false,
+              verified: data.verified,
             } as UserProvider;
           }
           setUser(currentUser);

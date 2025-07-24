@@ -18,12 +18,16 @@ import { db } from "@/firebaseConfig";
 import { Request } from "@/types/requests";
 import Loader from "@/components/loader/Loader";
 
-function useMissions(uid: string | undefined, setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
+function useMissions(user: UserProvider, setLoading: React.Dispatch<React.SetStateAction<boolean>>) {
   const [available, setAvailable] = useState<Request[]>([]);
   const [mine, setMine] = useState<Request[]>([]);
   const [note, setNote] = useState<number>(null)
 
   useEffect(() => {
+    if (!user.verified) {
+      setLoading(false)
+      return;
+    }
     setLoading(true);
     const qAvailable = query(
       collection(db, "requests"),
@@ -33,10 +37,10 @@ function useMissions(uid: string | undefined, setLoading: React.Dispatch<React.S
       setAvailable(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) })));
     });
 
-    if (uid) {
+    if (user.id) {
       const qMine = query(
         collection(db, "requests"),
-        where("providerId", "==", uid)
+        where("providerId", "==", user.id)
       );
       const unsub2 = onSnapshot(qMine, (snap) => {
         setMine(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) })));
@@ -58,7 +62,7 @@ function useMissions(uid: string | undefined, setLoading: React.Dispatch<React.S
       };
     }
     return unsub1;
-  }, [uid]);
+  }, [user]);
 
   return { available, mine, note };
 }
@@ -69,7 +73,7 @@ const ProviderDashboard = () => {
   const navigate = useNavigate();
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { available, mine, note } = useMissions(user?.id, setLoading);
+  const { available, mine, note } = useMissions(user, setLoading);
   
   const stats = useMemo(() => {
     const completed = mine.filter((m) => m.status === "completed");
@@ -253,9 +257,9 @@ const ProviderDashboard = () => {
         </div>
 
         <Tabs defaultValue="missions" className="space-y-6">
-          <TabsList className="grid grid-cols-3 w-full max-w-2xl">
+          <TabsList className={`grid grid-cols-${user.verified ? 2 : 3} w-full max-w-2xl`}>
             <TabsTrigger value="missions">Missions</TabsTrigger>
-            <TabsTrigger value="kyc">Vérification</TabsTrigger>
+            {!user.verified &&  (<TabsTrigger value="kyc">Vérification</TabsTrigger>)}
             <TabsTrigger value="earnings">Revenus</TabsTrigger>
           </TabsList>
 
