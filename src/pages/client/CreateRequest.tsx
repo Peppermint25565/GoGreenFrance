@@ -42,7 +42,6 @@ const CreateRequest = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const serviceType = searchParams.get('type') || 'atoigreen';
-  const [paid, setPaid] = useState<boolean>(false);
   
   const [formData, setFormData] = useState({
     service: null as Service | null,
@@ -130,20 +129,6 @@ const CreateRequest = () => {
     setFormData({ ...formData, photos: newPhotos });
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
-    if (sessionId) {
-      fetch(`/session-status?session_id=${sessionId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === 'complete' || data.payment_status === 'paid') {
-            setPaid(true);
-          }
-        });
-    }
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -151,10 +136,7 @@ const CreateRequest = () => {
       return;
     }
     const serviceBrand = formData.service.category === 'jardinage' ? 'atoigreen' : 'atoifix';
-    
-    if (!paid) {
-      return;
-    }
+  
     try {
       const docRef = await addDoc(collection(db, "requests"), {
         clientId: user.id,
