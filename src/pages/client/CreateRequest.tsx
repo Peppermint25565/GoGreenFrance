@@ -151,7 +151,7 @@ const CreateRequest = () => {
         ecoOptions: formData.ecoOptions,
         priceOriginal: estimatedPrice,
         status: "pending" as RequestStatus,
-        createdAt: new Timestamp(0, new Date().getTime() * 1e6)
+        createdAt: new Timestamp(new Date().getTime() / 1e3, 0)
       } as Request);
       if (formData.photos.length > 0) {
         const photoURLs: string[] = [];
