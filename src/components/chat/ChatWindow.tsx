@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import Loader from "../loader/Loader";
 import { arrayUnion, collection, doc, getDocs, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
+import { uploadChatFile } from "@/supabase";
 
 interface Message {
   id: string;
@@ -38,7 +39,6 @@ const ChatWindow = ({
   const [chatId, setChatId] = useState<string>("")
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     const func = async () => {
@@ -81,30 +81,32 @@ const ChatWindow = ({
     setMessages(prev => [...prev, message]);
     setNewMessage("");
     
-    toast({
-      title: "Message envoyé",
-      description: "Votre message a été envoyé avec succès",
-    });
+    
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !chatId) return;
 
-    const isImage = file.type.startsWith('image/');
+    const url = await uploadChatFile(file, chatId);
     const message: Message = {
       id: Date.now().toString(),
       senderId: currentUserId,
       senderName: currentUserName,
-      content: isImage ? "Photo partagée" : "Fichier partagé",
+      content: url,
       timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, message]);
     
-    toast({
-      title: "Fichier envoyé",
-      description: `${file.name} a été envoyé avec succès`,
+    await updateDoc(doc(db, "chats", chatId), {
+      ["chats"]: arrayUnion({
+        id: message.id,
+        senderId: currentUserId,
+        senderName: currentUserName,
+        time: Timestamp.now(),
+        value: url
+      })
     });
   };
 

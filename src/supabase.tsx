@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { v4 as uuid } from 'uuid';
 
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_PROJECT_URL, import.meta.env.VITE_SUPABASE_API_KEY)
 export interface UploadData {
@@ -52,5 +53,19 @@ export async function uploadKyc(file: File, providerId: string, docType: string)
     throw error;
   }
   const { data: urlData } = supabase.storage.from('kyc-docs').getPublicUrl(filePath);
+  return urlData.publicUrl;
+}
+
+export async function uploadChatFile(file: File, chatId: string) {
+  const filePath = `${chatId}/${uuid()}`;
+  const { data } = await supabase.storage.from('chats').exists(filePath)
+  if (data) {
+    await supabase.storage.from('chats').remove([filePath])
+  }
+  const { error } = await supabase.storage.from('chats').upload(filePath, file);
+  if (error) {
+    throw error;
+  }
+  const { data: urlData } = supabase.storage.from('chats').getPublicUrl(filePath);
   return urlData.publicUrl;
 }
