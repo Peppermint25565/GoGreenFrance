@@ -7,6 +7,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Paperclip, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Loader from "../loader/Loader";
+import { arrayUnion, collection, doc, getDocs, query, Timestamp, updateDoc, where } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 
 interface Message {
   id: string;
@@ -14,9 +17,6 @@ interface Message {
   senderName: string;
   content: string;
   timestamp: Date;
-  type: 'text' | 'image' | 'file';
-  fileUrl?: string;
-  fileName?: string;
 }
 
 interface ChatWindowProps {
@@ -24,47 +24,33 @@ interface ChatWindowProps {
   currentUserId: string;
   currentUserName: string;
   otherUserName: string;
-  otherUserType: 'client' | 'provider';
 }
 
 const ChatWindow = ({ 
   requestId, 
   currentUserId, 
   currentUserName, 
-  otherUserName, 
-  otherUserType 
+  otherUserName
 }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [chatId, setChatId] = useState<string>("")
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Mock messages pour la démonstration
   useEffect(() => {
-    const mockMessages: Message[] = [
-      {
-        id: "1",
-        senderId: otherUserType === 'provider' ? 'provider-123' : 'client-456',
-        senderName: otherUserName,
-        content: "Bonjour ! J'ai bien reçu votre demande. Pouvez-vous me donner plus de détails sur l'accès au jardin ?",
-        timestamp: new Date(Date.now() - 3600000),
-        type: 'text'
-      },
-      {
-        id: "2",
-        senderId: currentUserId,
-        senderName: currentUserName,
-        content: "Bonjour ! L'accès se fait par le portail sur le côté. Il y a environ 50m² de pelouse à tondre.",
-        timestamp: new Date(Date.now() - 1800000),
-        type: 'text'
-      }
-    ];
-    setMessages(mockMessages);
-  }, [requestId, currentUserId, currentUserName, otherUserName, otherUserType]);
+    const func = async () => {
+      const data = (await getDocs(query(collection(db, "chats"), where("requestId", "==", requestId)))).docs[0]
+      const msgs: Message[] = data.data().chats.map((c) => ({id: c.id, senderId: c.senderId, senderName: c.senderName, content: c.value, timestamp: c.time.toDate()} as Message))
+      setChatId(data.id)
+      setMessages(msgs);
+      setIsLoading(false);
+    }
+    func()
+  }, [requestId, currentUserId, currentUserName, otherUserName]);
 
-  // Auto-scroll vers le bas
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
@@ -80,14 +66,20 @@ const ChatWindow = ({
       senderName: currentUserName,
       content: newMessage,
       timestamp: new Date(),
-      type: 'text'
     };
+
+    await updateDoc(doc(db, "chats", chatId), {
+      ["chats"]: arrayUnion({
+        id: message.id,
+        senderId: currentUserId,
+        senderName: currentUserName,
+        time: Timestamp.now(),
+        value: newMessage
+      })
+    });
 
     setMessages(prev => [...prev, message]);
     setNewMessage("");
-
-    // Ici, on enverrait normalement le message via API
-    console.log('Sending message:', message);
     
     toast({
       title: "Message envoyé",
@@ -106,9 +98,6 @@ const ChatWindow = ({
       senderName: currentUserName,
       content: isImage ? "Photo partagée" : "Fichier partagé",
       timestamp: new Date(),
-      type: isImage ? 'image' : 'file',
-      fileName: file.name,
-      fileUrl: URL.createObjectURL(file)
     };
 
     setMessages(prev => [...prev, message]);
@@ -127,107 +116,94 @@ const ChatWindow = ({
   };
 
   return (
-    <Card className="h-[500px] flex flex-col">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>
-              {otherUserName.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="font-medium">{otherUserName}</div>
-            <div className="text-sm text-muted-foreground">
-              {otherUserType === 'provider' ? 'Prestataire' : 'Client'}
+    <>
+      {isLoading && <Loader />}
+      <Card className="h-[500px] flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback>
+                {otherUserName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="font-medium">{otherUserName}</div>
             </div>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-0">
-        <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
-          <div className="space-y-4 py-4">
-            {messages.map((message) => {
-              const isOwn = message.senderId === currentUserId;
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
-                    <div
-                      className={`rounded-lg px-3 py-2 ${
-                        isOwn
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
-                    >
-                      {message.type === 'image' && message.fileUrl && (
-                        <img
-                          src={message.fileUrl}
-                          alt={message.fileName}
-                          className="rounded mb-2 max-w-full h-auto"
-                        />
-                      )}
-                      {message.type === 'file' && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <Paperclip className="h-4 w-4" />
-                          <span className="text-sm">{message.fileName}</span>
-                        </div>
-                      )}
-                      <p className="text-sm">{message.content}</p>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1 px-1">
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col p-0">
+          <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
+            <div className="space-y-4 py-4">
+              {messages.map((message) => {
+                const isOwn = message.senderId === currentUserId;
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
+                      <div
+                        className={`rounded-lg px-3 py-2 ${
+                          isOwn
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        <p className="text-sm">{message.content}</p>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 px-1">
+                        {message.timestamp.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </ScrollArea>
+          
+          <div className="border-t p-4">
+            <div className="flex gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*,.pdf,.doc,.docx"
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Tapez votre message..."
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || isLoading}
+                size="icon"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              🔒 Conversation sécurisée - Aucune information personnelle n'est partagée
+            </p>
           </div>
-        </ScrollArea>
-        
-        <div className="border-t p-4">
-          <div className="flex gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*,.pdf,.doc,.docx"
-              className="hidden"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading}
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Tapez votre message..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={!newMessage.trim() || isLoading}
-              size="icon"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            🔒 Conversation sécurisée - Aucune information personnelle n'est partagée
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 

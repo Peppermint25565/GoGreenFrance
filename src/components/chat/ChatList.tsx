@@ -3,15 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Clock } from "lucide-react";
+import { RequestStatus } from "@/types/requests";
 
 interface ChatItem {
   requestId: string;
   otherUserName: string;
-  otherUserType: 'client' | 'provider';
   lastMessage: string;
   lastMessageTime: Date;
-  unreadCount: number;
-  requestStatus: 'pending' | 'accepted' | 'in_progress' | 'completed';
+  requestStatus: RequestStatus;
   serviceName: string;
 }
 
@@ -83,15 +82,7 @@ const ChatList = ({ chats, onChatSelect, selectedChatId }: ChatListProps) => {
                       <h4 className="font-medium text-sm truncate">
                         {chat.otherUserName}
                       </h4>
-                      <span className="text-xs text-muted-foreground">
-                        ({chat.otherUserType === 'provider' ? 'Prestataire' : 'Client'})
-                      </span>
                     </div>
-                    {chat.unreadCount > 0 && (
-                      <Badge variant="destructive" className="h-5 text-xs">
-                        {chat.unreadCount}
-                      </Badge>
-                    )}
                   </div>
                   <p className="text-sm font-medium text-muted-foreground mb-2">
                     {chat.serviceName}
