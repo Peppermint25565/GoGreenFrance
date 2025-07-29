@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { createRequest } from "@/services/requests";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,7 +46,6 @@ const CreateRequest = () => {
     service: null as Service | null,
     location: {
       address: '',
-      coordinates: { lat: 0, lng: 0 }
     },
     description: '',
     surface: '',
@@ -111,7 +109,7 @@ const CreateRequest = () => {
     }
   }, [formData.service, formData.surface, formData.isExpress, formData.urgency, formData.ecoOptions.certificateRequested]);
 
-  const handleLocationSelect = (location: { address: string; coordinates: { lat: number; lng: number } }) => {
+  const handleLocationSelect = (location: { address: string }) => {
     setFormData({ ...formData, location });
   };
 

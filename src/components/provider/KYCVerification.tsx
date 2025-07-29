@@ -18,13 +18,6 @@ interface KYCStep {
   description: string;
 }
 
-interface KycData {
-  identity: { url: string, status: KycStatus },
-  address:  { url: string, status: KycStatus },
-  insurance:{ url: string, status: KycStatus },
-  bank:     { url: string, status: KycStatus }
-};
-
 const KYCVerification = ({ user, handleSubmitFile, handleUploadFile }: { user: UserProvider, handleSubmitFile:  (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => Promise<void>; handleUploadFile: (event: React.ChangeEvent<HTMLInputElement>, step: any) => void }) => {
   const kycKeys = Object.keys(user.kyc);
   let kycValue = Object.values(user.kyc);
@@ -109,6 +102,7 @@ const KYCVerification = ({ user, handleSubmitFile, handleUploadFile }: { user: U
             {step.status === 'not_started' && (
               <div className="space-y-3">
                 <div className="grid w-full max-w-sm items-center gap-1.5">
+                  {step.reason && <Label style={{color: "red"}}>{step.reason}</Label>}
                   <Label htmlFor={`file-${kycKeys[i]}`}>Télécharger le document</Label>
                   <Input id={`file-${kycKeys[i]}`} type="file" accept=".pdf" onChange={(e) => handleUploadFile(e, kycSteps[i])} />
                 </div>

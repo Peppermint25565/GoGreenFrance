@@ -8,7 +8,7 @@ import { MapPin, Navigation, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LocationPickerProps {
-  onLocationSelect: (location: { address: string; coordinates: { lat: number; lng: number } }) => void;
+  onLocationSelect: (location: { address: string }) => void;
   initialAddress?: string;
 }
 
@@ -33,7 +33,7 @@ const LocationPicker = ({ onLocationSelect, initialAddress = "" }: LocationPicke
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         const accuracy = position.coords.accuracy;
@@ -43,15 +43,24 @@ const LocationPicker = ({ onLocationSelect, initialAddress = "" }: LocationPicke
         // Créer une adresse précise avec les coordonnées
         const preciseAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)} (Précision: ${Math.round(accuracy)}m)`;
         setPreciseLocation(preciseAddress);
-        
-        // Si l'utilisateur n'a pas encore saisi d'adresse, utiliser les coordonnées
-        if (!address.trim()) {
-          setAddress(preciseAddress);
-        }
+      
+        const nominatim = new URL("https://nominatim.openstreetmap.org/reverse");
+        nominatim.searchParams.set("format", "jsonv2");
+        nominatim.searchParams.set("lat", String(lat));
+        nominatim.searchParams.set("lon", String(lng));
+        nominatim.searchParams.set("addressdetails", "1");
+        const res = await fetch(nominatim.toString(), {
+          headers: {
+            "User-Agent": "MyApp/1.0 (contact@exemple.com)",
+            "Accept-Language": "fr",
+          }
+        });
+        if (!res.ok) throw new Error(`Nominatim ${res.status}`);
+        const data = await res.json();
+        setAddress(data.display_name);
         
         onLocationSelect({
-          address: address.trim() || preciseAddress,
-          coordinates: { lat, lng }
+          address: address.trim()
         });
         
         setIsLocating(false);
@@ -94,11 +103,9 @@ const LocationPicker = ({ onLocationSelect, initialAddress = "" }: LocationPicke
   const handleAddressChange = (newAddress: string) => {
     setAddress(newAddress);
     
-    // Si l'utilisateur saisit une adresse et qu'on a des coordonnées précises, les utiliser
     if (newAddress.length > 3 && coordinates) {
       onLocationSelect({
-        address: newAddress,
-        coordinates: coordinates
+        address: newAddress
       });
     }
   };
@@ -112,21 +119,8 @@ const LocationPicker = ({ onLocationSelect, initialAddress = "" }: LocationPicke
       });
       return;
     }
-
-    // Si on n'a pas de coordonnées précises, générer des coordonnées approximatives pour la France
-    let finalCoordinates = coordinates;
-    if (!coordinates) {
-      // Coordonnées approximatives centrées sur la France avec une variation aléatoire
-      finalCoordinates = {
-        lat: 46.603354 + (Math.random() - 0.5) * 8,
-        lng: 1.888334 + (Math.random() - 0.5) * 8
-      };
-      setCoordinates(finalCoordinates);
-    }
-
     onLocationSelect({
       address: address,
-      coordinates: finalCoordinates!
     });
 
     toast({
@@ -178,7 +172,7 @@ const LocationPicker = ({ onLocationSelect, initialAddress = "" }: LocationPicke
             )}
           </Button>
 
-        {(coordinates || address) && (address ? (
+          {address && (
             <div className="mt-4">
               <iframe
                 title="map"
@@ -187,22 +181,10 @@ const LocationPicker = ({ onLocationSelect, initialAddress = "" }: LocationPicke
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 className="rounded-lg border"
-                src={`https://www.google.com/maps?q=${address}&hl=fr&z=14&output=embed`}
+                src={`https://www.google.com/maps?q=${address.trim()}&hl=fr&z=14&output=embed`}
               />
             </div>
-          ) : (
-            <div className="mt-4">
-              <iframe
-                title="map"
-                width="100%"
-                height="250"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="rounded-lg border"
-                src={`https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}&hl=fr&z=14&output=embed`}
-              />
-            </div>
-          ))}
+          )}
 
           {address.trim() && (
             <Button

@@ -107,8 +107,8 @@ const ClientProfile = () => {
                 <div className="space-y-2">
                   <Label>Photo de profil (optionnel)</Label>
                   <div className="flex flex-col items-center space-y-4">
-                    <Avatar className="h-24 w-24 flex flex-col items-center justify-center space-y-2 rounded-full border border-[rgb(223, 223, 223)]">
-                      <AvatarImage onLoadingStatusChange={(s) => (s == "loaded" ? setLoading(false) : null)} src={avatarPreview || ""} />
+                    <Avatar className="h-24 w-24 flex flex-col items-center justify-center space-y-2 rounded-full  overflow-hidden  border border-[rgb(223, 223, 223)]">
+                      <AvatarImage className="h-full w-full object-cover rounded-full" onLoadingStatusChange={(s) => (s == "loaded" ? setLoading(false) : null)} src={avatarPreview || ""} />
                       <AvatarFallback className="text-lg">
                         {user.name ? user.name.substring(0, 2).toUpperCase() : <Camera className="h-8 w-8" />}
                       </AvatarFallback>

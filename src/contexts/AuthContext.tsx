@@ -40,10 +40,10 @@ export interface UserProvider {
     sunday: boolean;
   };
   kyc: {
-    identity: { url: string, status: KycStatus },
-    address:  { url: string, status: KycStatus },
-    insurance:{ url: string, status: KycStatus },
-    bank:     { url: string, status: KycStatus }
+    identity: { url: string, status: KycStatus, reason?: string },
+    address:  { url: string, status: KycStatus, reason?: string },
+    insurance:{ url: string, status: KycStatus, reason?: string },
+    bank:     { url: string, status: KycStatus, reason?: string }
   };
 }
 interface AuthContextType {
@@ -119,10 +119,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 sunday: data.availability.sunday,
               },
               kyc: {
-                identity: { url: data.kyc.identity.url, status: data.kyc.identity.status },
-                address:  { url: data.kyc.address.url, status: data.kyc.address.status },
-                insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status },
-                bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status }
+                identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, reason: data.kyc.identity.reason },
+                address:  { url: data.kyc.address.url, status: data.kyc.address.status, reason: data.kyc.address.reason },
+                insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, reason: data.kyc.insurance.reason },
+                bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, reason: data.kyc.bank.reason }
               }
             } as UserProvider;
           }
@@ -182,10 +182,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             sunday: data.availability.sunday,
           },
           kyc: {
-            identity: { url: data.kyc.identity.url, status: data.kyc.identity.status },
-            address:  { url: data.kyc.address.url, status: data.kyc.address.status },
-            insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status },
-            bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status }
+            identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, reason: data.kyc.identity.reason },
+            address:  { url: data.kyc.address.url, status: data.kyc.address.status, reason: data.kyc.address.reason },
+            insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, reason: data.kyc.insurance.reason },
+            bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, reason: data.kyc.bank.reason }
           } 
         } as UserProvider;
       }
@@ -238,10 +238,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             sunday: data.availability.sunday,
           },
           kyc: {
-            identity: { url: data.kyc.identity.url, status: data.kyc.identity.status },
-            address:  { url: data.kyc.address.url, status: data.kyc.address.status },
-            insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status },
-            bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status }
+            identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, reason: data.kyc.identity.reason },
+            address:  { url: data.kyc.address.url, status: data.kyc.address.status, reason: data.kyc.address.reason },
+            insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, reason: data.kyc.insurance.reason },
+            bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, reason: data.kyc.bank.reason }
           } 
         } as UserProvider;
       }
