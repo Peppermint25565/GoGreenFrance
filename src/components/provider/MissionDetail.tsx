@@ -8,7 +8,7 @@ import PriceAdjustmentModal from "./PriceAdjustmentModal";
 import { collection, query, where, getDocs, addDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/firebaseConfig";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserProvider } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { PriceAdjustment, Request, RequestStatus } from "@/types/requests";
 
@@ -20,7 +20,8 @@ interface MissionDetailProps {
 }
 
 const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: MissionDetailProps) => {
-  const { user } = useAuth();
+  const { u } = useAuth();
+  const user: UserProvider = u as UserProvider
   const { toast } = useToast();
   const [currentStatus, setCurrentStatus] = useState<RequestStatus>(mission.status);
   const [showPriceAdjustment, setShowPriceAdjustment] = useState(false);

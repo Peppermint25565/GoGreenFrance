@@ -9,7 +9,7 @@ interface Service {
   id: string;
   name: string;
   description: string;
-  category: "jardinage" | "bricolage";
+  category: string;
   subCategory?: "express" | "professionnel";
   basePrice: number;
   estimatedDuration: string;
@@ -25,209 +25,624 @@ interface ServiceSelectorProps {
 }
 
 const ServiceSelector = ({ onServiceSelect, selectedService }: ServiceSelectorProps) => {
-  const [selectedCategory, setSelectedCategory] = useState<"jardinage" | "bricolage" | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<"express" | "professionnel" | null>(null);
 
   const services: Service[] = [
+    // Services bricolage
+    {
+      id: "montage-meubles",
+      name: "Montage de meubles",
+      description: "Montage de meubles",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 40,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Meubles", "Express"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "pose-etageres-tringles-cadres",
+      name: "Pose d'étagères, tringles, cadres",
+      description: "Pose d'étagères, tringles, cadres",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 30,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Fixation", "Rapide"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "reparations-diverses-poignees-serrures",
+      name: "Réparations diverses (poignées, serrures)",
+      description: "Réparations diverses (poignées, serrures)",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 45,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Petites‑réparations", "Express"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "pose-joints",
+      name: "Pose de joints",
+      description: "Pose de joints",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 35,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Étanchéité", "Rapide"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "remplacement-prises-interrupteurs-bricolage",
+      name: "Remplacement de prises, interrupteurs",
+      description: "Remplacement de prises, interrupteurs",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 25,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Électricité", "Express"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "fixation-tv-tableaux-objets",
+      name: "Fixation TV, tableaux, objets",
+      description: "Fixation TV, tableaux, objets",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 40,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Fixation", "Précision"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "pose-rideaux-stores",
+      name: "Pose de rideaux et stores",
+      description: "Pose de rideaux et stores",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 30,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Décoration", "Rapide"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "bouchage-trous-retouches-peinture",
+      name: "Bouchage de trous, retouches peinture",
+      description: "Bouchage de trous, retouches peinture",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 35,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Peinture", "Finitions"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+
+    // Services ménage
+    {
+      id: "menage-ponctuel",
+      name: "Ménage ponctuel (1h)",
+      description: "Ménage ponctuel",
+      category: "bricolage",
+      basePrice: 25,
+      estimatedDuration: "1h",
+      popularity: 0,
+      tags: ["Nettoyage", "Rapide"],
+      interventionTime: "sous 12h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "nettoyage-printemps",
+      name: "Nettoyage de printemps",
+      description: "Nettoyage de printemps",
+      category: "bricolage",
+      basePrice: 3,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Grand‑nettoyage", "Saisonnier"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "lavage-vitres",
+      name: "Lavage de vitres",
+      description: "Lavage de vitres",
+      category: "bricolage",
+      basePrice: 5,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Vitres", "Brillant"],
+      interventionTime: "sous 12h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "nettoyage-fin-chantier",
+      name: "Nettoyage de fin de chantier",
+      description: "Nettoyage de fin de chantier",
+      category: "bricolage",
+      basePrice: 4,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Post‑chantier", "Professionnel"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "nettoyage-apres-demenagement",
+      name: "Nettoyage après déménagement",
+      description: "Nettoyage après déménagement",
+      category: "bricolage",
+      basePrice: 4,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Fin‑location", "Complet"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "repassage-domicile",
+      name: "Repassage à domicile (1h)",
+      description: "Repassage à domicile",
+      category: "bricolage",
+      basePrice: 20,
+      estimatedDuration: "1h",
+      popularity: 0,
+      tags: ["Linge", "Soin‑textile"],
+      interventionTime: "sous 12h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "desinfection",
+      name: "Désinfection (COVID, allergènes)",
+      description: "Désinfection (COVID, allergènes)",
+      category: "bricolage",
+      basePrice: 6,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Sanitaire", "Hygiène"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+
     // Services jardinage
     {
       id: "tonte-pelouse",
       name: "Tonte de pelouse",
-      description: "Tonte complète de votre pelouse avec ramassage des déchets",
+      description: "Tonte de pelouse",
       category: "jardinage",
-      basePrice: 0.8,
-      estimatedDuration: "1-2h",
-      popularity: 95,
-      tags: ["Écologique", "Rapide"],
+      basePrice: 1.5,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Pelouse", "Rapide"],
       interventionTime: "sous 12h",
       providerType: "Tous prestataires"
     },
     {
-      id: "taille-haies",
-      name: "Taille de haies",
-      description: "Taille professionnelle de vos haies et arbustes",
+      id: "taille-haies-arbustes",
+      name: "Taille de haies, arbustes",
+      description: "Taille de haies, arbustes",
       category: "jardinage",
-      basePrice: 15,
-      estimatedDuration: "2-3h",
-      popularity: 88,
-      tags: ["Précision", "Expertise"],
+      basePrice: 3,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Haies", "Entretien"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "desherbage",
+      name: "Désherbage",
+      description: "Désherbage",
+      category: "jardinage",
+      basePrice: 2,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Mauvaises‑herbes", "Écologique"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "ramassage-feuilles",
+      name: "Ramassage de feuilles",
+      description: "Ramassage de feuilles",
+      category: "jardinage",
+      basePrice: 1,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Saison", "Nettoyage"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "nettoyage-terrasse-balcon",
+      name: "Nettoyage terrasse/balcon",
+      description: "Nettoyage terrasse/balcon",
+      category: "jardinage",
+      basePrice: 2.5,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Extérieur", "Pression"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "arrosage-plantes",
+      name: "Arrosage de plantes",
+      description: "Arrosage de plantes",
+      category: "jardinage",
+      basePrice: 20,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Entretien", "Soins‑plantes"],
       interventionTime: "sous 12h",
       providerType: "Tous prestataires"
     },
-    
-    // Services bricolage express (sous 3h)
     {
-      id: "montage-meuble",
-      name: "Montage de meubles",
-      description: "Montage de commodes, tables, bureaux, lits, étagères IKEA",
-      category: "bricolage",
-      subCategory: "express",
-      basePrice: 60,
-      estimatedDuration: "1-2h",
-      popularity: 92,
-      tags: ["Express", "IKEA"],
-      interventionTime: "sous 3h",
-      providerType: "Tous prestataires formés"
+      id: "entretien-jardin-potager",
+      name: "Entretien jardin potager",
+      description: "Entretien jardin potager",
+      category: "jardinage",
+      basePrice: 2.5,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Potager", "Bio"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
     },
     {
-      id: "fixation-murale",
-      name: "Fixations murales",
-      description: "Fixation TV, cadres, étagères, tringles à rideaux, miroirs",
+      id: "montage-mobilier-exterieur",
+      name: "Montage mobilier extérieur",
+      description: "Montage mobilier extérieur",
+      category: "jardinage",
+      basePrice: 40,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Mobilier", "Extérieur"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+
+    // Services déménagement
+    {
+      id: "aide-demenagement",
+      name: "Aide au déménagement (1h)",
+      description: "Aide au déménagement",
       category: "bricolage",
-      subCategory: "express",
+       subCategory: "professionnel",
+      basePrice: 30,
+      estimatedDuration: "1h",
+      popularity: 0,
+      tags: ["Portage", "Logistique"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "chargement-dechargement-camion",
+      name: "Chargement/déchargement camion",
+      description: "Chargement/déchargement camion",
+      category: "bricolage",
+       subCategory: "professionnel",
       basePrice: 35,
-      estimatedDuration: "30min-1h",
-      popularity: 85,
-      tags: ["Express", "Précision"],
-      interventionTime: "sous 3h",
-      providerType: "Tous prestataires formés"
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Camion", "Déménagement"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
     },
     {
-      id: "installation-pateres",
-      name: "Installation d'accessoires",
-      description: "Patères, porte-serviettes, crochets muraux",
+      id: "deplacement-meubles-lourds",
+      name: "Déplacement de meubles lourds",
+      description: "Déplacement de meubles lourds",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 50,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Lourds", "Sécurité"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "transport-encombrants-dechetterie",
+      name: "Transport encombrants déchetterie",
+      description: "Transport encombrants déchetterie",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 45,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Déchetterie", "Écologique"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "livraison-meubles-electromenagers",
+      name: "Livraison meubles/électroménagers",
+      description: "Livraison meubles/électroménagers",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 50,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Livraison", "Gros‑volume"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+
+    // Services plomberie
+    {
+      id: "debouchage-evier-lavabo-douche",
+      name: "Débouchage évier/lavabo/douche",
+      description: "Débouchage évier/lavabo/douche",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 40,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Urgence", "Canalisation"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+    {
+      id: "changement-robinet",
+      name: "Changement de robinet",
+      description: "Changement de robinet",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 50,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Robinetterie", "Plomberie"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+    {
+      id: "remplacement-flexible-douche",
+      name: "Remplacement flexible douche",
+      description: "Remplacement flexible douche",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 30,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Douche", "Flexible"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+    {
+      id: "installation-lave-linge-lave-vaisselle",
+      name: "Installation lave-linge/lave-vaisselle",
+      description: "Installation lave-linge/lave-vaisselle",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 50,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Électroménager", "Raccordement"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+    {
+      id: "petites-fuites",
+      name: "Petites fuites (joints, siphons)",
+      description: "Petites fuites (joints, siphons)",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 40,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Fuite", "Réparation"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+
+    // Services électricité
+    {
+      id: "changement-luminaires",
+      name: "Changement luminaires",
+      description: "Changement luminaires",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 35,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Éclairage", "Sécurité"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+    {
+      id: "remplacement-prises-interrupteurs-electricite",
+      name: "Remplacement prises/interrupteurs",
+      description: "Remplacement prises/interrupteurs",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 30,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Prises", "Mise‑aux‑normes"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+    {
+      id: "installation-detecteurs-fumee",
+      name: "Installation détecteurs de fumée",
+      description: "Installation détecteurs de fumée",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 25,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Sécurité", "Détecteur"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+    {
+      id: "pose-multiprises-murales",
+      name: "Pose multiprises murales",
+      description: "Pose multiprises murales",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 20,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Courant", "Pratique"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+    {
+      id: "depannage-petits-appareils",
+      name: "Dépannage petits appareils",
+      description: "Dépannage petits appareils",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 30,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Dépannage", "Électronique"],
+      interventionTime: "sous 12h",
+      providerType: "Pros certifiés uniquement"
+    },
+
+    // Services peinture
+    {
+      id: "rafraichissement-peinture-mur",
+      name: "Rafraîchissement peinture mur",
+      description: "Rafraîchissement peinture mur",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 6,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Peinture", "Rénovation"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "pose-papier-peint",
+      name: "Pose de papier peint",
+      description: "Pose de papier peint",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 8,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Décoration", "Mur"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "pose-stickers-decorations",
+      name: "Pose de stickers/décorations",
+      description: "Pose de stickers/décorations",
       category: "bricolage",
       subCategory: "express",
       basePrice: 25,
-      estimatedDuration: "30min-1h",
-      popularity: 78,
-      tags: ["Express", "Rapide"],
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Stickers", "Rapide"],
       interventionTime: "sous 3h",
-      providerType: "Tous prestataires formés"
+      providerType: "Tous prestataires"
     },
     {
-      id: "petites-reparations",
-      name: "Petites réparations domestiques",
-      description: "Poignées de porte, rebouchage trous, joints silicone",
+      id: "conseils-amenagement-interieur",
+      name: "Conseils aménagement intérieur",
+      description: "Conseils aménagement intérieur",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 45,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Design", "Conseil"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+
+    // Services autres
+    {
+      id: "assemblage-jouets-velos",
+      name: "Assemblage jouets, vélos",
+      description: "Assemblage jouets, vélos",
+      category: "bricolage",
+      subCategory: "express",
+      basePrice: 30,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Assemblage", "Loisir"],
+      interventionTime: "sous 3h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "securisation-domicile-enfants",
+      name: "Sécurisation domicile enfants",
+      description: "Sécurisation domicile enfants",
+      category: "bricolage",
+       subCategory: "professionnel",
+      basePrice: 35,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Sécurité", "Enfants"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
+    },
+    {
+      id: "aide-informatique-simple",
+      name: "Aide informatique simple",
+      description: "Aide informatique simple",
       category: "bricolage",
       subCategory: "express",
       basePrice: 40,
-      estimatedDuration: "1h",
-      popularity: 82,
-      tags: ["Express", "Réparation"],
-      interventionTime: "sous 3h",
-      providerType: "Tous prestataires formés"
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Informatique", "Assistance"],
+      interventionTime: "sous 12h",
+      providerType: "Tous prestataires"
     },
     {
-      id: "electricite-base",
-      name: "Électricité de base",
-      description: "Ampoules, douilles, interrupteurs, prises, plafonniers",
+      id: "aide-administrative-domicile",
+      name: "Aide administrative à domicile",
+      description: "Aide administrative à domicile",
       category: "bricolage",
       subCategory: "express",
-      basePrice: 45,
-      estimatedDuration: "30min-1h",
-      popularity: 88,
-      tags: ["Express", "Électricité"],
-      interventionTime: "sous 3h",
-      providerType: "Tous prestataires formés"
-    },
-    {
-      id: "plomberie-legere",
-      name: "Plomberie légère",
-      description: "Débouchage évier, réparation fuites simples, pommeau douche",
-      category: "bricolage",
-      subCategory: "express",
-      basePrice: 55,
-      estimatedDuration: "1h",
-      popularity: 80,
-      tags: ["Express", "Plomberie"],
-      interventionTime: "sous 3h",
-      providerType: "Tous prestataires formés"
-    },
-    {
-      id: "accessoires-securite",
-      name: "Accessoires et sécurité",
-      description: "Barres d'appui, boîte aux lettres, rideaux, stores",
-      category: "bricolage",
-      subCategory: "express",
-      basePrice: 50,
-      estimatedDuration: "1-2h",
-      popularity: 75,
-      tags: ["Express", "Sécurité"],
-      interventionTime: "sous 3h",
-      providerType: "Tous prestataires formés"
-    },
-
-    // Services bricolage professionnels (sous 12h)
-    {
-      id: "peinture-complete",
-      name: "Peinture complète",
-      description: "Peinture murs/plafond, enduit et lissage, ponçage",
-      category: "bricolage",
-      subCategory: "professionnel",
       basePrice: 25,
-      estimatedDuration: "4-8h",
-      popularity: 90,
-      tags: ["Pro", "Rénovation"],
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Documents", "Support"],
       interventionTime: "sous 12h",
-      providerType: "Pros certifiés uniquement"
+      providerType: "Tous prestataires"
     },
     {
-      id: "sol-cloison",
-      name: "Sol & cloisons",
-      description: "Parquet, lino, PVC, cloison placo, isolation",
+      id: "surveillance-domicile",
+      name: "Surveillance domicile",
+      description: "Surveillance domicile",
       category: "bricolage",
-      subCategory: "professionnel",
-      basePrice: 30,
-      estimatedDuration: "4-6h",
-      popularity: 85,
-      tags: ["Pro", "Isolation"],
-      interventionTime: "sous 12h",
-      providerType: "Pros certifiés uniquement"
-    },
-    {
-      id: "plomberie-certifiee",
-      name: "Plomberie certifiée",
-      description: "Robinets mitigeurs, WC, meuble vasque, fuites encastrées",
-      category: "bricolage",
-      subCategory: "professionnel",
-      basePrice: 80,
-      estimatedDuration: "2-4h",
-      popularity: 88,
-      tags: ["Pro", "Certifié"],
-      interventionTime: "sous 12h",
-      providerType: "Pros certifiés uniquement"
-    },
-    {
-      id: "electricite-certifiee",
-      name: "Électricité certifiée",
-      description: "Prises, tableau divisionnaire, disjoncteurs, mise aux normes",
-      category: "bricolage",
-      subCategory: "professionnel",
-      basePrice: 90,
-      estimatedDuration: "2-4h",
-      popularity: 87,
-      tags: ["Pro", "Normes"],
-      interventionTime: "sous 12h",
-      providerType: "Pros certifiés uniquement"
-    },
-    {
-      id: "cuisine-amenagement",
-      name: "Cuisine & aménagement",
-      description: "Montage cuisine, hotte, plaque, évier, crédence",
-      category: "bricolage",
-      subCategory: "professionnel",
-      basePrice: 120,
-      estimatedDuration: "6-8h",
-      popularity: 92,
-      tags: ["Pro", "Cuisine"],
-      interventionTime: "sous 12h",
-      providerType: "Pros certifiés uniquement"
-    },
-    {
-      id: "reparation-urgence",
-      name: "Réparation d'urgence",
-      description: "Post-sinistre, séchage, sécurisation volet/porte",
-      category: "bricolage",
-      subCategory: "professionnel",
-      basePrice: 100,
-      estimatedDuration: "2-6h",
-      popularity: 95,
-      tags: ["Pro", "Urgence"],
-      interventionTime: "sous 12h",
-      providerType: "Pros certifiés uniquement"
+       subCategory: "professionnel",
+      basePrice: 20,
+      estimatedDuration: "",
+      popularity: 0,
+      tags: ["Veille", "Sécurité"],
+      interventionTime: "sous 24h",
+      providerType: "Tous prestataires"
     }
   ];
+
+
 
   // Fix the filtering logic to properly show services
   const filteredServices = services.filter(service => {

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { rejectAdjustment } from "@/services/requests";
 import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, Plus, MessageSquare, MapPin, Calendar, Settings, Bell, User } from "lucide-react";
@@ -333,7 +332,7 @@ const ClientDashboard = () => {
                       >
                         <div className="flex justify-between items-center">
                           <div>
-                            <h3 className="font-medium">{req.service?.name || "Service"}</h3>
+                            <h3 className="font-medium">{req.title|| "Service"}</h3>
                             <p className="text-sm text-muted-foreground">
                               Créée&nbsp;:{" "}
                               {new Date(req.createdAt?.seconds ? req.createdAt.seconds * 1000 : req.createdAt).toLocaleDateString()}
