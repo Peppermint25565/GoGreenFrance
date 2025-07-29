@@ -195,16 +195,6 @@ const ProviderProfile = () => {
                       placeholder="06 12 34 56 78"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="hourlyRate">Tarif horaire (€)</Label>
-                    <Input
-                      id="hourlyRate"
-                      type="number"
-                      value={profileData.hourlyRate}
-                      onChange={(e) => setProfileData({ ...profileData, hourlyRate: Number(e.target.value) })}
-                      placeholder="25"
-                    />
-                  </div>
                 </div>
 
                 {/* Address */}
