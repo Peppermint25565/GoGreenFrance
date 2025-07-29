@@ -13,9 +13,9 @@ import {
 import KYCVerification from "@/components/provider/KYCVerification";
 import MissionDetail from "@/components/provider/MissionDetail";
 import EarningsTracker from "@/components/provider/EarningsTracker";
-import { addDoc, collection, doc, onSnapshot, query, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, doc, getDocs, onSnapshot, query, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-import { Request } from "@/types/requests";
+import { PriceAdjustment, Request } from "@/types/requests";
 import Loader from "@/components/loader/Loader";
 import { uploadKyc } from "@/supabase";
 
@@ -109,16 +109,34 @@ const ProviderDashboard = () => {
   }, [user]);
 
   const handleAcceptMission = async (mission: Request) => {
-    await updateDoc(doc(db, "requests", mission.id), {
-      providerId: user.id,
-      providerName: user.name,
-      status: "accepted",
-      priceFinal: mission.priceOriginal
-    })
-    await addDoc(collection(db, "chats"), {
-      chats: [],
-      requestId: mission.id
-    })
+    if (!user) return;
+    try {
+      const adjQuery = query(
+        collection(db, "priceAdjustments"),
+        where("requestId", "==", mission.id),
+        where("providerId", "==", user.id),
+        where("status", "==", "pending")
+      );
+      const adjSnap = await getDocs(adjQuery);
+      if (!adjSnap.empty) {
+        return;
+      }
+      await addDoc(collection(db, "priceAdjustments"), {
+        requestId: mission.id,
+        providerId: user.id,
+        providerName: user.name,
+        serviceName: mission.title,
+        originalPrice: mission.priceOriginal,
+        newPrice: mission.priceOriginal,
+        justification: null,
+        photos: [] as string[],
+        videos: [] as string[],
+        timestamp: new Date(),
+        status: "pending"
+      } as PriceAdjustment)
+    } catch (error) {
+      console.error("Erreur lors de l'envoi :", error);
+    }
     navigate("/provider/dashboard")
   };
 

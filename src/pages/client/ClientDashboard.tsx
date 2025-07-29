@@ -5,12 +5,13 @@ import { Leaf, Plus, MessageSquare, MapPin, Calendar, Settings, Bell, User } fro
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { collection, query, where, getDocs, updateDoc, deleteDoc, doc, getDoc, limit, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, deleteDoc, doc, getDoc, limit, orderBy, addDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import PriceAdjustmentNotification from "@/components/client/PriceAdjustmentNotification";
 import { useToast } from "@/hooks/use-toast";
 import { PriceAdjustment } from "@/types/requests";
 import Loader from "@/components/loader/Loader";
+import { isPaid, pay } from "@/stripe";
 
 const ClientDashboard = () => {
   const { u, logout, fetchClientDashboard } = useAuth();
@@ -36,55 +37,114 @@ const ClientDashboard = () => {
       navigate("/admin/dashboard")
     }
   }, [])
-   useEffect(() => {
-     if (!user) return;
- 
-     const fetchData = async () => {
-       const reqSnap = await fetchClientDashboard(user.id);
- 
-       let active = 0;
-       let completed = 0;
-       let sumRatings = 0;
-       let rated = 0;
- 
-       reqSnap.forEach((d) => {
-         const data = d.data();
-         switch (data.status) {
-           case "pending":
-           case "accepted":
-           case "in_progress":
-             active += 1;
-             break;
-           case "completed":
-             completed += 1;
-             if (typeof data.rating === "number") {
-               sumRatings += data.rating;
-               rated += 1;
-             }
-             break;
-           default:
-             break;
-         }
-       });
- 
-       /* 3.  Dernières demandes (limite 4)      */
-       const recentQuery = query(
-         collection(db, "requests"),
-         where("clientId", "==", user.id),
-         orderBy("createdAt", "desc"),
-         limit(4)
-       );
-       const recentSnap = await getDocs(recentQuery);
- 
-       setActiveRequestsCount(active);
-       setCompletedServicesCount(completed);
-       setAverageRating(rated ? (sumRatings / rated).toFixed(1) : "–");
-       setRecentRequests(recentSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-       setLoading(false);
-     };
- 
-     fetchData();
-   }, [user]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('checkoutId');
+    const adjustmentId = params.get('adjustmentId');
+    if (!sessionId || !adjustmentId || !isPaid(sessionId)) return;
+
+    const fas = async () => {
+      try {
+        const adjustment: PriceAdjustment = (await getDoc(doc(db, "priceAdjustement", adjustmentId))).data() as PriceAdjustment
+        const reqRef = doc(db, "requests", adjustment.requestId);
+        await updateDoc(reqRef, {
+          providerId: adjustment.providerId,
+          providerName: adjustment.providerName,
+          status: "accepted",
+          priceFinal: adjustment.newPrice
+        })
+        await addDoc(collection(db, "chats"), {
+          chats: [],
+          requestId: adjustment.requestId
+        })
+
+        const otherAdjQuery = query(
+          collection(db, "priceAdjustments"),
+          where("requestId", "==", adjustment.requestId),
+          where("status", "==", "pending")
+        );
+        const otherAdjSnap = await getDocs(otherAdjQuery);
+        otherAdjSnap.forEach(async otherDoc => {
+          if (otherDoc.id !== adjustment.id) {
+            await deleteDoc(doc(db, "priceAdjustments", otherDoc.id));
+          }
+        });
+        setPriceAdjustments(prev =>
+          prev.map(adj =>
+            adj.id === adjustment.id ? { ...adj, status: 'accepted' as const } : adj
+          )
+        );
+        const response = await fetch("/api/checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requestId: adjustment.requestId, amount: adjustment.newPrice })
+        });
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      } catch (error) {
+        console.error("Erreur lors de l'acceptation de l'ajustement :", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible d'accepter l'ajustement, réessayez plus tard.",
+          variant: "destructive",
+        });
+      }
+    }
+    fas()
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      const reqSnap = await fetchClientDashboard(user.id);
+
+      let active = 0;
+      let completed = 0;
+      let sumRatings = 0;
+      let rated = 0;
+
+      reqSnap.forEach((d) => {
+        const data = d.data();
+        switch (data.status) {
+          case "pending":
+          case "accepted":
+          case "in_progress":
+            active += 1;
+            break;
+          case "completed":
+            completed += 1;
+            if (typeof data.rating === "number") {
+              sumRatings += data.rating;
+              rated += 1;
+            }
+            break;
+          default:
+            break;
+        }
+      });
+
+      /* 3.  Dernières demandes (limite 4)      */
+      const recentQuery = query(
+        collection(db, "requests"),
+        where("clientId", "==", user.id),
+        orderBy("createdAt", "desc"),
+        limit(4)
+      );
+      const recentSnap = await getDocs(recentQuery);
+
+      setActiveRequestsCount(active);
+      setCompletedServicesCount(completed);
+      setAverageRating(rated ? (sumRatings / rated).toFixed(1) : "–");
+      setRecentRequests(recentSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [user]);
   
  const [priceAdjustments, setPriceAdjustments] = useState<PriceAdjustment[]>([]);
 
@@ -109,48 +169,7 @@ const ClientDashboard = () => {
   }, [user]);
 
   const handleAcceptAdjustment = async (adjustment: PriceAdjustment, feedback?: string) => {
-    try {
-      const reqRef = doc(db, "requests", adjustment.requestId);
-      await updateDoc(reqRef, {
-        providerId: adjustment.providerId,
-        providerName: adjustment.providerName,
-        status: "accepted",
-        priceFinal: adjustment.newPrice
-      })
-
-      const otherAdjQuery = query(
-        collection(db, "priceAdjustments"),
-        where("requestId", "==", adjustment.requestId),
-        where("status", "==", "pending")
-      );
-      const otherAdjSnap = await getDocs(otherAdjQuery);
-      otherAdjSnap.forEach(async otherDoc => {
-        if (otherDoc.id !== adjustment.id) {
-          await deleteDoc(doc(db, "priceAdjustments", otherDoc.id));
-        }
-      });
-      setPriceAdjustments(prev =>
-        prev.map(adj =>
-          adj.id === adjustment.id ? { ...adj, status: 'accepted' as const } : adj
-        )
-      );
-      const response = await fetch("/api/checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId: adjustment.requestId, amount: adjustment.newPrice })
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'acceptation de l'ajustement :", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'accepter l'ajustement, réessayez plus tard.",
-        variant: "destructive",
-      });
-    }
+    pay(adjustment.newPrice, adjustment.serviceName, `${window.location.protocol}//${window.location.host}/client/dashboard?checkoutId={CHECKOUT_SESSION_ID}?adjustmentId=${adjustment.id}`)
   };
 
   const handleRejectAdjustment = async (adjustmentId: string, reason: string) => {
