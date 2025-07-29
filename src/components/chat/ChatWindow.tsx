@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Paperclip, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Loader from "../loader/Loader";
-import { arrayUnion, collection, doc, getDocs, query, Timestamp, updateDoc, where } from "firebase/firestore";
+import { arrayUnion, collection, doc, getDocs, onSnapshot, orderBy, query, Timestamp, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { uploadChatFile } from "@/supabase";
 
@@ -43,13 +43,27 @@ const ChatWindow = ({
   useEffect(() => {
     const func = async () => {
       const data = (await getDocs(query(collection(db, "chats"), where("requestId", "==", requestId)))).docs[0]
-      const msgs: Message[] = data.data().chats.map((c) => ({id: c.id, senderId: c.senderId, senderName: c.senderName, content: c.value, timestamp: c.time.toDate()} as Message))
-      setChatId(data.id)
+      const msgs: Message[] = data?.data().chats.map((c) => ({id: c.id, senderId: c.senderId, senderName: c.senderName, content: c.value, timestamp: c.time.toDate()} as Message))
+      setChatId(data?.id)
       setMessages(msgs);
       setIsLoading(false);
     }
     func()
   }, [requestId, currentUserId, currentUserName, otherUserName]);
+
+  useEffect(() => {
+    const msgsQuery = query(
+      collection(db, "chats"),
+      where("requestId", "==", requestId),
+    );
+
+    const unsub = onSnapshot(msgsQuery, (snap) => {
+      const msgs: Message[] = snap.docs[0]?.data().chats.map((c) => ({id: c.id, senderId: c.senderId, senderName: c.senderName, content: c.value, timestamp: c.time.toDate()} as Message))
+      setMessages(msgs);
+    });
+
+    return () => unsub();
+  }, [requestId]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {

@@ -9,7 +9,7 @@ import ChatList from "@/components/chat/ChatList";
 import Loader from "@/components/loader/Loader";
 import { RequestStatus } from "@/types/requests";
 import { db } from "@/firebaseConfig";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 
 interface ChatItem {
   requestId: string;
@@ -35,7 +35,7 @@ const Chat = () => {
       let parsed = data.docs.map((d) => {
         const data = d.data()
         const out = {
-          requestId: data.id,
+          requestId: d.id,
           otherUserName: u.role == 0 ? data.providerName : data.clientName,
           lastMessage: "",
           lastMessageTime: new Date(),
@@ -47,9 +47,9 @@ const Chat = () => {
       let index = 0;
       for (var p of parsed) {
         const cChat = await getDocs(query(collection(db, "chats"), where(u.role == 0 ? "clientId" : "providerId", "==", u.id), where("requestId", "==", p.requestId)))
-        const lastMessage = cChat.docs[0].data()
-        parsed[index].lastMessage = lastMessage.value
-        parsed[index].lastMessage = lastMessage.time
+        const lastMessage = cChat.docs[0]?.data()
+        parsed[index].lastMessage = lastMessage?.value
+        parsed[index].lastMessage = lastMessage?.time
         index++;
       }
       setChats(parsed);
@@ -57,6 +57,48 @@ const Chat = () => {
     }
     getChats()
   }, [])
+
+  useEffect(() => {
+  if (!u) return;
+
+  const chatsQuery = query(
+    collection(db, "requests"),
+    where(u.role === 0 ? "clientId" : "providerId", "==", u.id),
+    where("status", "!=", "pending"),
+    orderBy("updatedAt", "desc")         // assurez‑vous d’avoir le champ
+  );
+
+  const unsub = onSnapshot(chatsQuery, async (snap) => {
+    // On récupère le dernier message de chaque chat
+    const promises = snap.docs.map(async (doc) => {
+      const r = doc.data();
+      const lastMsgQuery = query(
+        collection(db, "chats"),
+        where("requestId", "==", doc.id),
+        orderBy("time", "desc"),
+        limit(1)
+      );
+
+      const lastSnap = await getDocs(lastMsgQuery);
+      const last = lastSnap.docs[0]?.data();
+
+      return {
+        requestId: doc.id,
+        otherUserName: u.role === 0 ? r.providerName : r.clientName,
+        lastMessage: last?.value ?? "",
+        lastMessageTime: last?.time?.toDate?.() ?? new Date(0),
+        requestStatus: r.status,
+        serviceName: r.title,
+      } as ChatItem;
+    });
+
+    const resolved = await Promise.all(promises);
+    setChats(resolved);
+    setLoading(false);
+  });
+
+  return () => unsub();
+}, [u]);
 
   useEffect(() => {
     if (!user) {

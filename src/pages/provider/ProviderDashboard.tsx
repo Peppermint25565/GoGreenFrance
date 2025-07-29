@@ -13,7 +13,7 @@ import {
 import KYCVerification from "@/components/provider/KYCVerification";
 import MissionDetail from "@/components/provider/MissionDetail";
 import EarningsTracker from "@/components/provider/EarningsTracker";
-import { collection, doc, onSnapshot, query, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, doc, onSnapshot, query, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { Request } from "@/types/requests";
 import Loader from "@/components/loader/Loader";
@@ -114,6 +114,10 @@ const ProviderDashboard = () => {
       providerName: user.name,
       status: "accepted",
       priceFinal: mission.priceOriginal
+    })
+    await addDoc(collection(db, "chats"), {
+      chats: [],
+      requestId: mission.id
     })
     navigate("/provider/dashboard")
   };
