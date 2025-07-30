@@ -40,7 +40,7 @@ const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetS
         total += req.priceFinal ? req.priceFinal : req.priceOriginal
       });
       setTotalEarned(total)
-      setAvgEarning(total / array.length)
+      if (array.length != 0) setAvgEarning(total / array.length)
       setLoading(false);
     }
     func()
