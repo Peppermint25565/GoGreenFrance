@@ -105,18 +105,19 @@ const PriceAdjustmentNotification = ({
                 {getStatusBadge(adjustment.status)}
               </div>
               
-              <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className={`grid grid-cols-${adjustment.newPrice != adjustment.originalPrice ? 2 : 1} gap-4 mb-3`}>
                 <div className="text-center p-3 bg-gray-50 rounded">
-                  <p className="text-sm text-muted-foreground">Prix initial</p>
+                  <p className="text-sm text-muted-foreground">Prix{adjustment.newPrice != adjustment.originalPrice && " initial"}</p>
                   <p className="text-lg font-bold">{adjustment.originalPrice}€</p>
                 </div>
+                {adjustment.newPrice != adjustment.originalPrice &&
                 <div className="text-center p-3 bg-blue-50 rounded">
                   <p className="text-sm text-muted-foreground">Nouveau prix</p>
                   <p className="text-lg font-bold text-blue-600">{adjustment.newPrice}€</p>
                   <p className="text-xs text-blue-600">
                     +{adjustment.newPrice - adjustment.originalPrice}€
                   </p>
-                </div>
+                </div>}
               </div>
 
               {adjustment.justification && <div className="mb-3">

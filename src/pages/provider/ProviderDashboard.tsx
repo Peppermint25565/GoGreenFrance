@@ -125,6 +125,7 @@ const ProviderDashboard = () => {
 
   const handleAcceptMission = async (mission: Request) => {
     if (!user) return;
+    setLoading(true)
     try {
       const adjQuery = query(
         collection(db, "priceAdjustments"),
