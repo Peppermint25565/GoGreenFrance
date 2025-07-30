@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 
-const Login = () => {
+
+const Reset = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, u } = useAuth();
   const navigate = useNavigate();
@@ -21,23 +22,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const user = await login(email, password);
-      toast({
-        title: "Connexion réussie",
-        description: "Vous êtes maintenant connecté.",
-      });
-      if (user.role == 0) {
-        navigate("/client/dashboard");
-      } else if (user.role == 1) {
-        navigate("/provider/dashboard");
-      } else if (user.role == 2) {
-        navigate("/admin/dashboard");
-      }
-    } catch (error) {
-      toast({
-        title: "Erreur de connexion",
-        description: "Email ou mot de passe incorrect.",
-        variant: "destructive",
+      const auth = getAuth();
+      await sendPasswordResetEmail(auth, email, {
+        url: "${window.location.protocol}//${window.location.host}/login"
       });
     } finally {
       setLoading(false);
@@ -59,9 +46,9 @@ const Login = () => {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Connexion</CardTitle>
+            <CardTitle className="text-2xl">Mot de passe Oublié</CardTitle>
             <CardDescription>
-              Connectez-vous à votre compte Atoi
+              Reinitialiser votre mot de passe
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -77,36 +64,10 @@ const Login = () => {
                   placeholder="votre@email.com"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                />
-              </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Connexion..." : "Se connecter"}
+                {loading ? "Chargement..." : "Continuer"}
               </Button>
             </form>
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Pas encore de compte ?{" "}
-                <Link to="/register" className="text-green-600 hover:underline">
-                  S'inscrire
-                </Link>
-              </p>
-            </div>
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                <Link to="/reset" className="text-green-600 hover:underline">
-                  Mot de passe oublié ?
-                </Link>
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -114,4 +75,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Reset;

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   onAuthStateChanged, signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, signOut 
+  createUserWithEmailAndPassword, signOut, 
+  sendEmailVerification
 } from "firebase/auth";
 import { collection, doc, DocumentData, getDoc, getDocs, query, QuerySnapshot, setDoc, updateDoc, where } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -315,6 +316,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await setDoc(doc(db, "profiles", firebaseUser.uid), newUser);
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
+      await sendEmailVerification(firebaseUser); 
       return newUser
     } catch (error) {
       console.error("Erreur inscription :", error);
