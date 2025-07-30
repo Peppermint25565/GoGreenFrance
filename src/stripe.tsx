@@ -17,7 +17,7 @@ export async function pay(adjustment: PriceAdjustment) {
       },
       quantity: 1,
     }],
-    success_url: `${window.location.protocol}//${window.location.host}/client/dashboard?checkoutId={CHECKOUT_SESSION_ID}?adjustmentId=${adjustment.id}`, // `/success?session_id={CHECKOUT_SESSION_ID}
+    success_url: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}?adjustmentId=${adjustment.id}`, // `/success?session_id={CHECKOUT_SESSION_ID}
   });
   const stripe2 = await stripePromise;
   await stripe2.redirectToCheckout({ sessionId: session.id });
