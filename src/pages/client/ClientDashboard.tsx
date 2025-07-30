@@ -204,6 +204,7 @@ const ClientDashboard = () => {
     if (data.url) {
       window.location.href = data.url;
     }
+    window.location.reload()
   };
 
   const handleRejectAdjustment = async (adjustmentId: string, reason: string) => {
