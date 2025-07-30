@@ -91,11 +91,7 @@ const ChatWindow = ({
         value: newMessage
       })
     });
-
-    setMessages(prev => [...prev, message]);
     setNewMessage("");
-    
-    
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
