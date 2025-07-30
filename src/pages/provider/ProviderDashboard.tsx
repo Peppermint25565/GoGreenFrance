@@ -154,6 +154,7 @@ const ProviderDashboard = () => {
       console.error("Erreur lors de l'envoi :", error);
     }
     setSelectedMission(null)
+    window.location.reload()
   };
 
   const handleDeclineMission = async (missionId: string) => {

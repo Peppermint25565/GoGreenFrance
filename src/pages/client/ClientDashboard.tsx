@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { collection, query, where, getDocs, updateDoc, deleteDoc, doc, getDoc, limit, orderBy, addDoc } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { auth, db } from "@/firebaseConfig";
 import PriceAdjustmentNotification from "@/components/client/PriceAdjustmentNotification";
 import { useToast } from "@/hooks/use-toast";
 import { PriceAdjustment } from "@/types/requests";
@@ -14,7 +14,7 @@ import Loader from "@/components/loader/Loader";
 import { isPaid, pay } from "@/stripe";
 
 const ClientDashboard = () => {
-  const { u, logout, fetchClientDashboard } = useAuth();
+  const { u, logout, fetchClientDashboard, updateUserData } = useAuth();
   const user: UserClient = u as UserClient;
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -97,9 +97,8 @@ const ClientDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-
     const fetchData = async () => {
+      if (!user) return;
       const reqSnap = await fetchClientDashboard(user.id);
 
       let active = 0;
@@ -184,9 +183,8 @@ const ClientDashboard = () => {
     } catch (error) {
       console.error("Erreur lors du refus de l'ajustement :", error);
     }
+    window.location.reload()
   };
-
-  const pendingAdjustments = priceAdjustments.filter(adj => adj.status === 'pending');
 
   return (
     <>

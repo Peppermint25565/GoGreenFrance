@@ -277,6 +277,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let newUser: UserClient | UserProvider;
       if (role == 0) {
         newUser = {
+          id: firebaseUser.uid,
           email: firebaseUser.email,
           name: name,
           role: role,
@@ -316,7 +317,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await setDoc(doc(db, "profiles", firebaseUser.uid), newUser);
       setUser(newUser);
       localStorage.setItem("user", JSON.stringify(newUser));
-      await sendEmailVerification(firebaseUser); 
+      await sendEmailVerification(firebaseUser);
       return newUser
     } catch (error) {
       console.error("Erreur inscription :", error);
