@@ -82,6 +82,7 @@ const ChatWindow = ({
       timestamp: new Date(),
     };
 
+    setNewMessage("");
     await updateDoc(doc(db, "chats", chatId), {
       ["chats"]: arrayUnion({
         id: message.id,
@@ -91,7 +92,6 @@ const ChatWindow = ({
         value: newMessage
       })
     });
-    setNewMessage("");
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
