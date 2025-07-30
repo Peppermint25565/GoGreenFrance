@@ -5,11 +5,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Euro, TrendingUp, Calendar, Clock, Award } from "lucide-react";
 import { Request } from "@/types/requests";
 import { useEffect, useState } from "react";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDocs, orderBy, query, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { useAuth, UserProvider } from "@/contexts/AuthContext";
 import { UserProfile } from "firebase/auth";
 import React from "react";
+import RatingModal from "../client/RatingModal";
 
 const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetStateAction<boolean>>}) => {
   const { u } = useAuth();
@@ -34,6 +35,8 @@ const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetS
       setCountRequests(array.length)
       let total = 0;
       array.forEach(req => {
+        const currentDate = new Date();
+        if (!(req.createdAt.toDate().getMonth() === currentDate.getMonth() && req.createdAt.toDate().getFullYear() === currentDate.getFullYear()))
         total += req.priceFinal ? req.priceFinal : req.priceOriginal
       });
       setTotalEarned(total)
@@ -42,6 +45,10 @@ const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetS
     }
     func()
   }, [])
+
+  const onRateClient = async (orderId: string, rating: number) => {
+    await updateDoc(doc(db, "requests", orderId), {"clientRate": rating})
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -119,6 +126,7 @@ const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetS
                     {getStatusBadge(earning.status)}
                   </div>
                 </div>
+                <RatingModal providerName={earning.providerName} serviceName={earning.title} onSubmitRating={onRateClient} orderId={earning.id} />
               </div>
             ))}
           </div>

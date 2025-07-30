@@ -34,8 +34,23 @@ function useMissions(user: UserProvider, setLoading: React.Dispatch<React.SetSta
       collection(db, "requests"),
       where("status", "==", "pending")
     );
-    const unsub1 = onSnapshot(qAvailable, (snap) => {
-      setAvailable(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) })));
+    const unsub1 = onSnapshot(qAvailable, async (snap) => {
+      const out: Request[] = []
+      const docs = snap.docs
+      for (var doc of docs) {
+        const data = doc.data()
+        const adjQuery = query(
+          collection(db, "priceAdjustments"),
+          where("requestId", "==", doc.id),
+          where("providerId", "==", user.id)
+        );
+        const adjSnap = await getDocs(adjQuery);
+        if (!adjSnap.empty) {
+          continue
+        }
+        out.push({ id: doc.id, ...(data as Request)})
+      }
+      setAvailable(out);
     });
 
     if (user.id) {
@@ -47,12 +62,12 @@ function useMissions(user: UserProvider, setLoading: React.Dispatch<React.SetSta
         setMine(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) })));
         let count = 0
         mine.forEach(elm => {
-          if (elm.rating) {
+          if (elm.providerRate) {
             count++;
             if (!note) {
-              setNote(elm.rating)
+              setNote(elm.providerRate)
             } else
-              setNote(((note * (count - 1)) + elm.rating) / count)
+              setNote(((note * (count - 1)) + elm.providerRate) / count)
           }
         });
         setLoading(false);
@@ -119,6 +134,7 @@ const ProviderDashboard = () => {
       );
       const adjSnap = await getDocs(adjQuery);
       if (!adjSnap.empty) {
+        navigate("/provider/dashboard")
         return;
       }
       await addDoc(collection(db, "priceAdjustments"), {
@@ -315,11 +331,12 @@ const ProviderDashboard = () => {
           </p>
         </div>
 
-        <Tabs defaultValue={tab == 0 ? "missions" : (tab == 1 ? "kyc" : (tab == 3 ? "earnings" : "missionsj"))} className="space-y-6">
-          <TabsList className={`grid grid-cols-${user.verified ? 2 : 3} w-full max-w-2xl`}>
+        <Tabs defaultValue={tab == 0 ? "missions" : (tab == 1 ? "kyc" : (tab == 3 ? "earnings" : "missions"))} className="space-y-6">
+          <TabsList className={`grid grid-cols-${user.verified ? 3 : 4} w-full max-w-2xl`}>
             <TabsTrigger value="missions">Missions</TabsTrigger>
             {!user.verified &&  (<TabsTrigger value="kyc">Vérification</TabsTrigger>)}
             <TabsTrigger value="earnings">Revenus</TabsTrigger>
+            <TabsTrigger onClick={() => {navigate("/chat")}} value="chat">Chat</TabsTrigger>
           </TabsList>
 
           <TabsContent value="missions">

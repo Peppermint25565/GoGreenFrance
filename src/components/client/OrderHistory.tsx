@@ -11,11 +11,12 @@ import { collection, getDocs, orderBy, query, Timestamp, where } from "firebase/
 import { Interface } from "readline";
 import { Request } from "@/types/requests";
 import { UserClient } from "@/contexts/AuthContext";
+import RatingModal from "./RatingModal";
 
 interface OrderHistoryProps {
   onViewDetails: (orderId: string) => void;
   onDownloadInvoice: (orderId: string) => void;
-  onRateProvider: (orderId: string) => void;
+  onRateProvider: (orderId: string, rating: number) => void;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>
   user: UserClient
 }
@@ -82,9 +83,9 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider, setLoa
   const stats = useMemo(() => {
     const completed = orders.filter((o) => o.status === "completed");
     const totalSpent = completed.reduce((sum, o) => sum + (o.priceFinal ? o.priceFinal : o.priceOriginal), 0);
-    const rated = completed.filter((o) => o.rating !== undefined);
+    const rated = completed.filter((o) => o.clientRate !== undefined);
     const avgRating =
-      rated.length === 0 ? null : rated.reduce((s, o) => s + (o.rating ?? 0), 0) / rated.length;
+      rated.length === 0 ? null : rated.reduce((s, o) => s + (o.clientRate ?? 0), 0) / rated.length;
 
     return {
       totalSpent,
@@ -199,7 +200,8 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider, setLoa
 
           {/* Liste des commandes */}
           <div className="space-y-4">
-            {filteredOrders.map((order) => (
+            {filteredOrders.map((order) => {
+              return (
               <div key={order.id} className="border rounded-lg p-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
@@ -214,17 +216,18 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider, setLoa
                     </div>
                     <div className="flex items-center gap-4 mt-2">
                       <span className="font-semibold text-green-600">{order.priceFinal ? order.priceFinal : order.priceOriginal}€</span>
-                      {order.rating && (
+                      {order.providerRate && (
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm">{order.rating}/5</span>
+                          <span className="text-sm">{order.providerRate}/5</span>
                         </div>
                       )}
                     </div>
                   </div>
+                  {order.status == "completed" && <RatingModal providerName={order.providerName} serviceName={order.title} onSubmitRating={onRateProvider} orderId={order.id} />}
                 </div>
               </div>
-            ))}
+            )})}
           </div>
           
           {filteredOrders.length === 0 && (

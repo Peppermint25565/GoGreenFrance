@@ -27,8 +27,8 @@ export interface Request {
   photos?: string[];
   status: RequestStatus;
   createdAt: Timestamp;
-  rating?: number;
-  ratingComment?: string;
+  clientRate?: number,
+  providerRate?: number
 }
 
 export interface PriceAdjustment {

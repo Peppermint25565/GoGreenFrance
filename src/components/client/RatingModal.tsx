@@ -1,25 +1,36 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 
 interface RatingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
   providerName: string;
   serviceName: string;
-  onSubmitRating: (rating: number, comment: string) => void;
+  onSubmitRating: (orderId: string, rating: number) => void;
+  orderId: string
 }
 
-const RatingModal = ({ isOpen, onClose, providerName, serviceName, onSubmitRating }: RatingModalProps) => {
+const RatingModal = ({ providerName, serviceName, onSubmitRating, orderId }: RatingModalProps) => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fas = async () => {
+      const snap = await getDoc(doc(db, "requests", orderId));
+      const rate = snap.data().providerRate
+      setRating(rate ? rate : 0)
+    }
+    fas()
+  }, [])
 
   const handleSubmit = () => {
     if (rating === 0) {
@@ -31,7 +42,7 @@ const RatingModal = ({ isOpen, onClose, providerName, serviceName, onSubmitRatin
       return;
     }
 
-    onSubmitRating(rating, comment);
+    onSubmitRating(orderId, rating);
     toast({
       title: "Évaluation envoyée",
       description: "Merci pour votre retour ! Il aidera les futurs clients.",
@@ -41,7 +52,7 @@ const RatingModal = ({ isOpen, onClose, providerName, serviceName, onSubmitRatin
     setRating(0);
     setHoverRating(0);
     setComment("");
-    onClose();
+    setIsOpen(false)
   };
 
   const getRatingText = (stars: number) => {
@@ -56,7 +67,12 @@ const RatingModal = ({ isOpen, onClose, providerName, serviceName, onSubmitRatin
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+    {!isOpen && (
+    <Button variant="outline" onClick={() => setIsOpen(true)} className="">
+      Noter
+    </Button>)}
+    <Dialog open={isOpen} onOpenChange={() => setIsOpen(false)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Évaluez votre prestataire</DialogTitle>
@@ -95,32 +111,9 @@ const RatingModal = ({ isOpen, onClose, providerName, serviceName, onSubmitRatin
               {getRatingText(hoverRating || rating)}
             </p>
           </div>
-
-          {/* Commentaire */}
-          <div className="space-y-2">
-            <Label htmlFor="comment">Commentaire (optionnel)</Label>
-            <Textarea
-              id="comment"
-              placeholder="Partagez votre expérience avec ce prestataire..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={4}
-            />
-          </div>
-
-          {/* Suggestions d'amélioration */}
-          {rating > 0 && rating < 4 && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <p className="text-sm text-orange-800">
-                Votre retour nous aide à améliorer nos services. 
-                N'hésitez pas à détailler ce qui pourrait être amélioré.
-              </p>
-            </div>
-          )}
-
           {/* Actions */}
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
               Annuler
             </Button>
             <Button onClick={handleSubmit} className="flex-1">
@@ -130,7 +123,7 @@ const RatingModal = ({ isOpen, onClose, providerName, serviceName, onSubmitRatin
         </div>
       </DialogContent>
     </Dialog>
-  );
+  </>);
 };
 
 export default RatingModal;

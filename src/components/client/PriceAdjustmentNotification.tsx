@@ -99,7 +99,7 @@ const PriceAdjustmentNotification = ({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <Clock className="h-3 w-3 inline mr-1" />
-                    {adjustment.timestamp.toLocaleString()}
+                    {adjustment.timestamp.toDate().toDateString()}
                   </p>
                 </div>
                 {getStatusBadge(adjustment.status)}
@@ -119,12 +119,12 @@ const PriceAdjustmentNotification = ({
                 </div>
               </div>
 
-              <div className="mb-3">
+              {adjustment.justification && <div className="mb-3">
                 <p className="text-sm font-medium mb-1">Justification :</p>
                 <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
                   {adjustment.justification}
                 </p>
-              </div>
+              </div>}
 
               {(adjustment.photos.length > 0 || adjustment.videos.length > 0) && (
                 <div className="mb-3">

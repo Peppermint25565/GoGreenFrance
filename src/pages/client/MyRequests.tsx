@@ -10,7 +10,7 @@ import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, ArrowLeft, MessageSquare, Star, Clock, CheckCircle, XCircle, Plus, Upload, AlertTriangle, Edit, Paperclip, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import Loader from "@/components/loader/Loader";
 
@@ -26,6 +26,21 @@ const MyRequests = () => {
   const [requestsData, setRequestsData] = useState<any[]>([]);
   const filterOptions = ["Tous", "En attente", "En cours", "Terminé", "Annulé"];
   const [loading, setLoading] = useState<boolean>(true);
+
+  const handleCancelRequest = async (requestId: string) => {
+    await updateDoc(doc(db, "requests", requestId), {status: "cancelled"})
+
+    const otherAdjQuery = query(
+      collection(db, "priceAdjustments"),
+      where("requestId", "==", requestId),
+      where("status", "==", "pending")
+    );
+    const otherAdjSnap = await getDocs(otherAdjQuery);
+    otherAdjSnap.forEach(async otherDoc => {
+      await deleteDoc(doc(db, "priceAdjustments", otherDoc.id))
+    });
+    navigate("/client/dashboard")
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -58,7 +73,8 @@ const MyRequests = () => {
     setRating(stars);
   };
 
-  const submitRating = (requestId: number) => {
+  const submitRating = async (requestId: string) => {
+    await updateDoc(doc(db, "requests", requestId), {providerRate: rating})
     if (rating === 0) {
       toast({
         title: "Erreur",
@@ -226,7 +242,12 @@ const MyRequests = () => {
                   
                   <div className="flex justify-between items-center mt-4 pt-4 border-t">
                     <div className="flex gap-2">
-                      {request.status === "En cours" && (
+                      {request.status === "pending" && (
+                        <Button variant="outline" size="sm" onClick={() => handleCancelRequest(request.id)}>
+                          Annuler
+                        </Button>
+                      )}
+                      {request.status === "accepted" && (
                         <Link to={`/chat/${request.id}`}>
                           <Button variant="outline" size="sm">
                             <MessageSquare className="h-4 w-4 mr-2" />
@@ -234,7 +255,7 @@ const MyRequests = () => {
                           </Button>
                         </Link>
                       )}
-                      {request.status === "Terminé" && (
+                      {request.status === "completed" && (
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="outline" size="sm">

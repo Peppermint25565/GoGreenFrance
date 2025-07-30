@@ -8,13 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import OrderHistory from "@/components/client/OrderHistory";
 import RatingModal from "@/components/client/RatingModal";
 import Loader from "@/components/loader/Loader";
-
-interface RatingModal {
-  isOpen: boolean;
-  orderId: string;
-  providerName: string;
-  serviceName: string;
-}
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 
 const OrderHistoryPage = () => {
   const { u, logout } = useAuth();
@@ -22,7 +17,6 @@ const OrderHistoryPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState<boolean>(true);
-  const [ratingModal, setRatingModal] = useState<RatingModal>(null);
 
   useEffect(() => {
     if (!user) {
@@ -44,27 +38,8 @@ const OrderHistoryPage = () => {
     console.log(`Downloading invoice for order ${orderId}`);
   };
 
-  const handleRateProvider = (orderId: string) => {
-    // Simuler la récupération des données de la commande
-    const mockData = {
-      providerName: "Pierre Martin",
-      serviceName: "Tonte de pelouse"
-    };
-    
-    setRatingModal({
-      isOpen: true,
-      orderId,
-      providerName: mockData.providerName,
-      serviceName: mockData.serviceName
-    });
-  };
-
-  const handleSubmitRating = (rating: number, comment: string) => {
-    console.log(`Rating submitted for order ${ratingModal.orderId}:`, { rating, comment });
-    toast({
-      title: "Évaluation enregistrée",
-      description: "Merci pour votre retour !",
-    });
+  const handleRateProvider = async (orderId: string, rating: number) => {
+    await updateDoc(doc(db, "requests", orderId), {"providerRate": rating})
   };
 
   return (

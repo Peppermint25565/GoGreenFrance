@@ -127,10 +127,10 @@ const ClientDashboard = () => {
         }
       });
 
-      /* 3.  Dernières demandes (limite 4)      */
       const recentQuery = query(
         collection(db, "requests"),
         where("clientId", "==", user.id),
+        where("status", "!=", "cancelled"),
         orderBy("createdAt", "desc"),
         limit(4)
       );
@@ -206,17 +206,6 @@ const ClientDashboard = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <span className="text-gray-600">Bonjour, {user?.name ? user.name : ""}</span>
-                {pendingAdjustments.length > 0 && (
-                  <div className="relative">
-                    <Bell className="h-5 w-5 text-orange-500" />
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                    >
-                      {pendingAdjustments.length}
-                    </Badge>
-                  </div>
-                )}
               </div>
               <Link to="/client/profile">
                   <Button variant="outline" size="sm">

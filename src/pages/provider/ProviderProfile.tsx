@@ -279,27 +279,6 @@ const ProviderProfile = () => {
                   </div>
                 </div>
 
-                {/* Documents Upload */}
-                <div>
-                  <Label>Documents justificatifs</Label>
-                  <div className="mt-2 space-y-3">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Carte d'identité</p>
-                      <Button type="button" variant="outline" size="sm" className="mt-2">
-                        Choisir un fichier
-                      </Button>
-                    </div>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Attestation d'assurance</p>
-                      <Button type="button" variant="outline" size="sm" className="mt-2">
-                        Choisir un fichier
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex gap-4">
                   <Button type="button" variant="outline" className="flex-1" onClick={() => navigate('/provider/dashboard')}>
                     Annuler

@@ -9,7 +9,7 @@ import ChatList from "@/components/chat/ChatList";
 import Loader from "@/components/loader/Loader";
 import { RequestStatus } from "@/types/requests";
 import { db } from "@/firebaseConfig";
-import { collection, getDocs, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 
 interface ChatItem {
   requestId: string;
@@ -18,6 +18,7 @@ interface ChatItem {
   lastMessageTime: Date;
   requestStatus: RequestStatus;
   serviceName: string;
+  otherAvatar: string | null
 }
 
 const Chat = () => {
@@ -31,7 +32,7 @@ const Chat = () => {
 
   useEffect(() => {
     const getChats = async () => {
-      const data = await getDocs(query(collection(db, "requests"), where(u.role == 0 ? "clientId" : "providerId", "==", u.id), where("status", "!=", "pending")))
+      const data = await getDocs(query(collection(db, "requests"), where(u.role == 0 ? "clientId" : "providerId", "==", u.id), where("status", "in", ["accepted", "in_progress"]),))
       let parsed = data.docs.map((d) => {
         const data = d.data()
         const out = {
@@ -64,26 +65,28 @@ const Chat = () => {
   const chatsQuery = query(
     collection(db, "requests"),
     where(u.role === 0 ? "clientId" : "providerId", "==", u.id),
-    where("status", "!=", "pending"),
-    orderBy("updatedAt", "desc")         // assurez‑vous d’avoir le champ
+    where("status", "in", ["accepted", "in_progress"]),
+    orderBy("updatedAt", "desc")
   );
 
   const unsub = onSnapshot(chatsQuery, async (snap) => {
     // On récupère le dernier message de chaque chat
-    const promises = snap.docs.map(async (doc) => {
-      const r = doc.data();
+    const promises = snap.docs.map(async (doct) => {
+      const r = doct.data();
       const lastMsgQuery = query(
         collection(db, "chats"),
-        where("requestId", "==", doc.id),
+        where("requestId", "==", doct.id),
         orderBy("time", "desc"),
         limit(1)
       );
 
       const lastSnap = await getDocs(lastMsgQuery);
       const last = lastSnap.docs[0]?.data();
+      const avatar = (await getDoc(doc(db, "profiles", u.role === 0 ? r.providerId : r.clientId))).data().avatar
 
       return {
-        requestId: doc.id,
+        requestId: doct.id,
+        otherAvatar: avatar,
         otherUserName: u.role === 0 ? r.providerName : r.clientName,
         lastMessage: last?.value ?? "",
         lastMessageTime: last?.time?.toDate?.() ?? new Date(0),

@@ -1,16 +1,17 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, Euro, User, Phone, MessageSquare, Navigation, CheckCircle, Settings } from "lucide-react";
+import { MapPin, Clock, Euro, User, Phone, MessageSquare, Navigation, CheckCircle, Settings, Camera } from "lucide-react";
 import PriceAdjustmentModal from "./PriceAdjustmentModal";
-import { collection, query, where, getDocs, addDoc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, updateDoc, getDoc, doc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/firebaseConfig";
 import { useAuth, UserProvider } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { PriceAdjustment, Request, RequestStatus } from "@/types/requests";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 
 interface MissionDetailProps {
   mission: Request;
@@ -25,11 +26,21 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
   const { toast } = useToast();
   const [currentStatus, setCurrentStatus] = useState<RequestStatus>(mission.status);
   const [showPriceAdjustment, setShowPriceAdjustment] = useState(false);
+  const [clientAvatar, setClientAvatar] = useState<string>("");
 
   const handleStatusUpdate = (newStatus: RequestStatus) => {
     setCurrentStatus(newStatus);
     onUpdateStatus(mission.id, newStatus);
   };
+
+  useEffect(() => {
+    const fas = async () => {
+      const snap = await getDoc(doc(db, "profiles", mission.clientId));
+      const avatar = snap.data().avatar
+      setClientAvatar(avatar)
+    }
+    fas()
+  }, [])
 
   const handlePriceAdjustment = async (adjustment: {
     newPrice: number;
@@ -235,9 +246,12 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-              <User className="h-6 w-6 text-gray-500" />
-            </div>
+            <Avatar className="h-12 w-12 flex flex-col items-center justify-center space-y-2 rounded-full border overflow-hidden border-[rgb(223, 223, 223)]">
+              <AvatarImage className="h-full w-full object-cover rounded-full" src={clientAvatar || ""} />
+              <AvatarFallback className="text-lg">
+                  {user.name ? user.name.substring(0, 2).toUpperCase() : <User className="h-8 w-8" />}
+              </AvatarFallback>
+            </Avatar>
             <div>
               <h3 className="font-medium">{mission.clientName}</h3>
             </div>
