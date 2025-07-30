@@ -32,7 +32,7 @@ const Chat = () => {
 
   useEffect(() => {
     const getChats = async () => {
-      const data = await getDocs(query(collection(db, "requests"), where(u.role == 0 ? "clientId" : "providerId", "==", u.id), where("status", "in", ["accepted", "in_progress"]),))
+      const data = await getDocs(query(collection(db, "requests"), where(u.role == 0 ? "clientId" : "providerId", "==", u.id), where("status", "in", ["accepted", "in_progress", "completed"])))
       let parsed = data.docs.map((d) => {
         const data = d.data()
         const out = {

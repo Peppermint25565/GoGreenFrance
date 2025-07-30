@@ -153,7 +153,7 @@ const ProviderDashboard = () => {
     } catch (error) {
       console.error("Erreur lors de l'envoi :", error);
     }
-    navigate("/provider/dashboard")
+    setSelectedMission(null)
   };
 
   const handleDeclineMission = async (missionId: string) => {
