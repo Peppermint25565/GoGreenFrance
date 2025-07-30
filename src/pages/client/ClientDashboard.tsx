@@ -155,7 +155,7 @@ const ClientDashboard = () => {
       const reqSnapshot = await getDocs(reqQuery);
       for (const reqDoc of reqSnapshot.docs) {
         try {
-          const adjQuery = query(collection(db, "priceAdjustments"), where("requestId", "==", reqDoc.id));
+          const adjQuery = query(collection(db, "priceAdjustments"), where("requestId", "==", reqDoc.id), where("status", "==", "pending"));
           const adjSnapshot = await getDocs(adjQuery);
           adjSnapshot.forEach(adjDoc => adjustmentsArray.push(adjDoc.data() as PriceAdjustment));
         } catch {
