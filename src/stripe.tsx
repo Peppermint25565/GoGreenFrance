@@ -1,22 +1,23 @@
 import { loadStripe } from '@stripe/stripe-js';
 import Stripe from 'stripe';
+import { PriceAdjustment } from './types/requests';
 
 const stripe = new Stripe(import.meta.env.VITE_STRIPE_API_PRIVATE);
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_API_KEY);
 
-export async function pay(amount: number, name: string, callbackUrl: string) {
+export async function pay(adjustment: PriceAdjustment) {
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     line_items: [{
       price_data: {
         currency: 'eur',
-        product_data: { name: name },
-        unit_amount: Math.round(amount * 100),
+        product_data: { name: adjustment.serviceName },
+        unit_amount: Math.round(adjustment.newPrice * 100),
       },
       quantity: 1,
     }],
-    success_url: callbackUrl, // `/success?session_id={CHECKOUT_SESSION_ID}
+    success_url: `${window.location.protocol}//${window.location.host}/client/dashboard?checkoutId={CHECKOUT_SESSION_ID}?adjustmentId=${adjustment.id}`, // `/success?session_id={CHECKOUT_SESSION_ID}
   });
   const stripe2 = await stripePromise;
   await stripe2.redirectToCheckout({ sessionId: session.id });

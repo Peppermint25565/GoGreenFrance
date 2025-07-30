@@ -61,8 +61,7 @@ const ClientDashboard = () => {
 
         const otherAdjQuery = query(
           collection(db, "priceAdjustments"),
-          where("requestId", "==", adjustment.requestId),
-          where("status", "==", "pending")
+          where("requestId", "==", adjustment.requestId)
         );
         const otherAdjSnap = await getDocs(otherAdjQuery);
         otherAdjSnap.forEach(async otherDoc => {
@@ -168,7 +167,7 @@ const ClientDashboard = () => {
   }, [user]);
 
   const handleAcceptAdjustment = async (adjustment: PriceAdjustment, feedback?: string) => {
-    pay(adjustment.newPrice, adjustment.serviceName, `${window.location.protocol}//${window.location.host}/client/dashboard?checkoutId={CHECKOUT_SESSION_ID}?adjustmentId=${adjustment.id}`)
+    pay(adjustment)
   };
 
   const handleRejectAdjustment = async (adjustmentId: string, reason: string) => {
