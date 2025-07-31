@@ -65,9 +65,7 @@ const ClientDashboard = () => {
         );
         const otherAdjSnap = await getDocs(otherAdjQuery);
         otherAdjSnap.forEach(async otherDoc => {
-          if (otherDoc.id !== adjustment.id) {
-            await deleteDoc(doc(db, "priceAdjustments", otherDoc.id));
-          }
+          await deleteDoc(doc(db, "priceAdjustments", otherDoc.id));
         });
         setPriceAdjustments(prev =>
           prev.map(adj =>

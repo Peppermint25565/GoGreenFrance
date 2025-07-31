@@ -36,8 +36,7 @@ const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetS
       let total = 0;
       array.forEach(req => {
         const currentDate = new Date();
-        if (!(req.createdAt.toDate().getMonth() === currentDate.getMonth() && req.createdAt.toDate().getFullYear() === currentDate.getFullYear()))
-        total += req.priceFinal ? req.priceFinal : req.priceOriginal
+        if (req.createdAt.toDate().getMonth() === currentDate.getMonth() && req.createdAt.toDate().getFullYear() === currentDate.getFullYear()) total += req.priceFinal ? req.priceFinal : req.priceOriginal
       });
       setTotalEarned(total)
       if (array.length != 0) setAvgEarning(total / array.length)
