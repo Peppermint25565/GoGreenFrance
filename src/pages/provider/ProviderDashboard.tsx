@@ -59,7 +59,8 @@ function useMissions(user: UserProvider, setLoading: React.Dispatch<React.SetSta
         where("providerId", "==", user.id)
       );
       const unsub2 = onSnapshot(qMine, (snap) => {
-        setMine(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) })));
+        const array = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Request) }))
+        setMine(array);
         let count = 0
         mine.forEach(elm => {
           if (elm.providerRate) {
@@ -377,7 +378,7 @@ const ProviderDashboard = () => {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-2xl font-bold text-green-600 mb-2">{request.priceOriginal}€</div>
+                              <div className="text-2xl font-bold text-green-600 mb-2">{Math.round(request.priceOriginal * 0.8)}€</div>
                               <div className="flex gap-2">
                                 <Button 
                                   variant="outline" 
@@ -434,7 +435,7 @@ const ProviderDashboard = () => {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-xl font-bold text-green-600 mb-2">{job.priceOriginal}€</div>
+                              <div className="text-xl font-bold text-green-600 mb-2">{Math.round((job.priceFinal ? job.priceFinal : job.priceOriginal) * 0.8)}€</div>
                               <Button 
                                 size="sm"
                                 onClick={() => setSelectedMission(job.id)}

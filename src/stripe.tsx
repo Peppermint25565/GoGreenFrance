@@ -16,19 +16,10 @@ export async function pay(adjustment: PriceAdjustment) {
         unit_amount: Math.round(adjustment.newPrice * 100),
       },
       quantity: 1,
-    },{
-      price_data: {
-        currency: 'eur',
-        product_data: { name: "Fees" },
-        unit_amount: Math.round(adjustment.newPrice * 100 * (2 / 10)),
-      },
-      quantity: 1,
-    }
-  ],
-    success_url: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}`, // `/success?session_id={CHECKOUT_SESSION_ID}
+    }]
   });
   const stripe2 = await stripePromise;
-  await stripe2.redirectToCheckout({ sessionId: session.id });
+  await stripe2.redirectToCheckout({ sessionId: session.id, successUrl: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}` });
 }
 
 export const isPaid = async (checkoutId: string) => {

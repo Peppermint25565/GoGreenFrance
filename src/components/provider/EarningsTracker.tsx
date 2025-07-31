@@ -31,6 +31,10 @@ const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetS
       );
       const snap = await getDocs(q);
       const array = snap.docs.map((d) => ({ id: d.id, ...d.data() as Request}));
+      for (var elm of array) {
+        if (elm.priceFinal) elm.priceFinal = Math.round(elm.priceFinal * 0.8)
+        if (elm.priceOriginal) elm.priceOriginal = Math.round(elm.priceOriginal * 0.8)
+      }
       setRecentEarnings(array);
       setCountRequests(array.length)
       let total = 0;

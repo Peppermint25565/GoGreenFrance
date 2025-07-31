@@ -71,7 +71,7 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
         providerName: user.name,
         serviceName: mission.title,
         originalPrice: mission.priceOriginal,
-        newPrice: adjustment.newPrice,
+        newPrice: Math.round(adjustment.newPrice * 1.2),
         justification: adjustment.justification,
         photos: [] as string[],
         videos: [] as string[],
@@ -316,7 +316,7 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
           <CardContent>
             <div className="text-center mb-4">
               <div className="text-3xl font-bold text-green-600">
-                {mission.priceOriginal}€
+                {Math.round(mission.priceOriginal * 0.8)}€
               </div>
               <p className="text-sm text-gray-600">
                 Paiement automatique après validation
