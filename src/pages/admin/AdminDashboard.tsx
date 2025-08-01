@@ -54,7 +54,7 @@ const AdminDashboard = () => {
         for (var req of reqs) {
           const data = req.data()
           if (isLastWeek(data.createdAt.toDate())) {
-            amount += data.priceFinal
+            amount += Math.round(data.priceFinal * 0.8)
           }
         }
         if (amount > 0) {
