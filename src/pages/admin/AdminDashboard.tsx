@@ -300,25 +300,25 @@ const AdminDashboard = () => {
                             {mainActions.map((label, i) => {
                               let url = ""
                               if (i == 0) {
-                                if (provider.kyc.address.url === "") {
+                                if (provider.kyc.address.url === "" || provider.kyc.address.status === "verified") {
                                   return
                                 }
                                 url = provider.kyc.address.url
                               }
                               if (i == 1) {
-                                if (provider.kyc.bank.url === "") {
+                                if (provider.kyc.bank.url === "" || provider.kyc.bank.status === "verified") {
                                   return
                                 }
                                 url = provider.kyc.bank.url
                               }
                               if (i == 2) {
-                                if (provider.kyc.identity.url === "") {
+                                if (provider.kyc.identity.url === "" || provider.kyc.identity.status === "verified") {
                                   return
                                 }
                                 url = provider.kyc.identity.url
                               }
                               if (i == 3) {
-                                if (provider.kyc.insurance.url === "") {
+                                if (provider.kyc.insurance.url === "" || provider.kyc.insurance.status === "verified") {
                                   return
                                 }
                                 url = provider.kyc.insurance.url
