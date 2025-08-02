@@ -1,4 +1,4 @@
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, RedirectToCheckoutOptions } from '@stripe/stripe-js';
 import Stripe from 'stripe';
 import { PriceAdjustment } from './types/requests';
 
@@ -7,20 +7,22 @@ const stripe = new Stripe(import.meta.env.VITE_STRIPE_API_PRIVATE);
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_API_KEY);
 
 export async function pay(adjustment: PriceAdjustment) {
-  const session = await stripe.checkout.sessions.create({
+  const stripe2 = await stripePromise;
+  const price = await stripe.prices.create({
+    currency: 'eur',
+    unit_amount: adjustment.newPrice * 100,
+    product_data: {
+      name: adjustment.serviceName
+    }
+  });
+  await stripe2.redirectToCheckout({
     mode: 'payment',
-    line_items: [{
-      price_data: {
-        currency: 'eur',
-        product_data: { name: adjustment.serviceName },
-        unit_amount: Math.round(adjustment.newPrice * 100),
-      },
+    lineItems: [{
+      price: price.id,
       quantity: 1,
     }],
-    success_url: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}`
-  });
-  const stripe2 = await stripePromise;
-  await stripe2.redirectToCheckout({ sessionId: session.id, successUrl: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}` });
+    successUrl: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}`
+  } as RedirectToCheckoutOptions)
 }
 
 export const isPaid = async (checkoutId: string) => {
