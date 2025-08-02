@@ -16,7 +16,8 @@ export async function pay(adjustment: PriceAdjustment) {
         unit_amount: Math.round(adjustment.newPrice * 100),
       },
       quantity: 1,
-    }]
+    }],
+    success_url: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}`
   });
   const stripe2 = await stripePromise;
   await stripe2.redirectToCheckout({ sessionId: session.id, successUrl: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}` });
