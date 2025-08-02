@@ -1,18 +1,22 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth, UserClient } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Check, X } from "lucide-react";
 import UserManagement from "@/components/admin/UserManagement";
 import MissionTracking from "@/components/admin/MissionTracking";
 import WasteManagement from "@/components/admin/WasteManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import Loader from "@/components/loader/Loader";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { setISODay } from "date-fns";
 
 const AdminDashboard = () => {
   const { u, logout } = useAuth();
@@ -20,7 +24,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [providers, setProviders] = useState<any[]>([])
+  const [kycProviders, setKycProviders] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [reason, setReason] = useState<string>("")
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [selectedIndex, setSelectedIndex] = useState<any>(null);
 
   useEffect(()=>{
     if (!user) {
@@ -67,9 +76,70 @@ const AdminDashboard = () => {
     fas()
   }, [])
 
+    useEffect(() => {
+    const fas = async () => {
+      const docs = (await getDocs(query(collection(db, "profiles"), where("role", "==", 1), where("verified", "==", false)))).docs
+      setKycProviders(docs.map((e) => e.data()))
+    }
+    fas()
+  }, [])
+
   const handleProviderAction = (providerId: number, action: 'approve' | 'reject') => {
     console.log(`${action} provider ${providerId}`);
   };
+
+  const mainActions = ["Adresse", "RIB", "Identité", "Assurance"];
+
+  const handleAccept = async (provider: any, i: number) => {
+    setIsLoading(true)
+    const data = provider.kyc
+    if (i == 0) {
+      data.address.status = "verified"
+    }
+    if (i == 1) {
+      data.bank.status = "verified"
+    }
+    if (i == 2) {
+      data.identity.status = "verified"
+    }
+    if (i == 3) {
+      data.insurance.status = "verified"
+    }
+    await updateDoc(doc(db, 'profiles', provider.id), {kyc: data, verified: data.address.status == "verified" && data.bank.status == "verified" && data.identity.status == "verified" && data.insurance.status == "verified"});
+    const docs = (await getDocs(query(collection(db, "profiles"), where("role", "==", 1), where("verified", "==", false)))).docs
+    setKycProviders(docs.map((e) => e.data()))
+    setIsLoading(false)
+  }
+
+  const handleReject = async () => {
+    setIsLoading(true)
+    const data = selectedProvider.kyc
+    if (selectedIndex == 0) {
+      data.address.status = "not_started"
+      data.address.url = ""
+      data.address.reason = reason
+    }
+    if (selectedIndex == 1) {
+      data.bank.status = "not_started"
+      data.bank.url = ""
+      data.bank.reason = reason
+    }
+    if (selectedIndex == 2) {
+      data.identity.status = "not_started"
+      data.identity.url = ""
+      data.identity.reason = reason
+    }
+    if (selectedIndex == 3) {
+      data.insurance.status = "not_started"
+      data.insurance.url = ""
+      data.insurance.reason = reason
+    }
+    setReason("")
+    await updateDoc(doc(db, 'profiles', selectedProvider.id), {kyc: data});
+    const docs = (await getDocs(query(collection(db, "profiles"), where("role", "==", 1), where("verified", "==", false)))).docs
+    setKycProviders(docs.map((e) => e.data()))
+    setIsLoading(false)
+  }
 
   return (
     <>
@@ -96,6 +166,42 @@ const AdminDashboard = () => {
         </div>
       </header>
 
+      <Dialog open={isDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Refuser un document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="feedback">Raison</Label>
+              <Textarea
+                id="feedback"
+                placeholder="Ajoutez un commentaire pour le prestataire..."
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsDialogOpen(false)}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+              <Button 
+                onClick={() => handleReject()}
+                className="flex-1"
+              >
+                Envoyer
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="container mx-auto px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
           {/* Main Content */}
@@ -114,7 +220,8 @@ const AdminDashboard = () => {
               <div className="border-b border-gray-200">
                 <nav className="-mb-px flex flex-wrap gap-2 sm:gap-4">
                   {[
-                    { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
+                    { id: 'overview', label: "Chiffre prestataire", icon: BarChart3 },
+                    { id: 'kyc', label: "Vérifications", icon: BarChart3 },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -161,6 +268,92 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            {activeTab === 'kyc' && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg sm:text-xl">Vérifications des Préstataires</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {kycProviders.map((provider) => {
+                        if (provider.kyc.address.url === "" && provider.kyc.bank.url === "" && provider.kyc.insurance.url === "" && provider.kyc.identity.url === "") {
+                          return
+                        }
+                        return (
+                        <div key={provider.id} className="border rounded-lg p-4">
+                          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-base sm:text-lg mb-2">{provider.name}</h3>
+                              <div className="space-y-1 text-xs sm:text-sm text-gray-600">
+                                <p>User ID : {provider.id}</p>
+                                <p>Email: {provider.email}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
+                            {mainActions.map((label, i) => {
+                              let url = ""
+                              if (i == 0) {
+                                if (provider.kyc.address.url === "") {
+                                  return
+                                }
+                                url = provider.kyc.address.url
+                              }
+                              if (i == 1) {
+                                if (provider.kyc.bank.url === "") {
+                                  return
+                                }
+                                url = provider.kyc.bank.url
+                              }
+                              if (i == 2) {
+                                if (provider.kyc.identity.url === "") {
+                                  return
+                                }
+                                url = provider.kyc.identity.url
+                              }
+                              if (i == 3) {
+                                if (provider.kyc.insurance.url === "") {
+                                  return
+                                }
+                                url = provider.kyc.insurance.url
+                              }
+                              return (
+                              <div key={label+provider.id} className="flex flex-col items-center space-y-2 mt-2.5">
+                                <Button variant="outline" className="w-full" onClick={() => window.open(url, "_blank", "noopener,noreferrer")}>
+                                  {label}
+                                </Button>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="bg-red-500/10 text-red-600 hover:bg-red-500/20"
+                                    aria-label={`Refuser ${label}`}
+                                    onClick={() => {setIsDialogOpen(true); setSelectedProvider(provider); setSelectedIndex(i)}}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="bg-green-500/10 text-green-600 hover:bg-green-500/20"
+                                    aria-label={`Valider ${label}`}
+                                    onClick={() => handleAccept(provider, i)}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+
+                                </div>
+                              </div>
+                            )})}
+                          </div>
+                        </div>
+                      )})}
                     </div>
                   </CardContent>
                 </Card>

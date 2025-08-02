@@ -334,12 +334,12 @@ const ProviderDashboard = () => {
           </p>
         </div>
 
-        <Tabs defaultValue={tab == 0 ? "missions" : (tab == 1 ? "kyc" : (tab == 3 ? "earnings" : "missions"))} className="space-y-6">
-          <TabsList className={`grid grid-cols-${user.verified ? 3 : 4} w-full max-w-2xl`}>
-            <TabsTrigger value="missions">Missions</TabsTrigger>
-            {!user.verified &&  (<TabsTrigger value="kyc">Vérification</TabsTrigger>)}
-            <TabsTrigger value="earnings">Revenus</TabsTrigger>
-            <TabsTrigger onClick={() => {navigate("/chat")}} value="chat">Chat</TabsTrigger>
+        <Tabs defaultValue={user.verified ? tab == 0 ? "missions" : (tab == 1 ? "kyc" : (tab == 3 ? "earnings" : "missions")) : "kyc"} className="space-y-6">
+          <TabsList className={`grid grid-cols-${user.verified ? 3 : 1} w-full max-w-2xl`}>
+            {user.verified &&  <TabsTrigger value="missions">Missions</TabsTrigger>}
+            {!user.verified && (<TabsTrigger value="kyc">Vérification</TabsTrigger>)}
+            {user.verified && <TabsTrigger value="earnings">Revenus</TabsTrigger>}
+            {user.verified && <TabsTrigger onClick={() => {navigate("/chat")}} value="chat">Chat</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="missions">

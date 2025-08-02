@@ -120,10 +120,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 sunday: data.availability.sunday,
               },
               kyc: {
-                identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, reason: data.kyc.identity.reason },
-                address:  { url: data.kyc.address.url, status: data.kyc.address.status, reason: data.kyc.address.reason },
-                insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, reason: data.kyc.insurance.reason },
-                bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, reason: data.kyc.bank.reason }
+                identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, ...(data.kyc.identity.reason !== undefined && { reason: data.kyc.identity.reason }) },
+                address:  { url: data.kyc.address.url, status: data.kyc.address.status, ...(data.kyc.address.reason !== undefined && { reason: data.kyc.address.reason }) },
+                insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, ...(data.kyc.insurance.reason !== undefined && { reason: data.kyc.insurance.reason }) },
+                bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, ...(data.kyc.bank.reason !== undefined && { reason: data.kyc.bank.reason }) }
               }
             } as UserProvider;
           }
@@ -183,11 +183,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             sunday: data.availability.sunday,
           },
           kyc: {
-            identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, reason: data.kyc.identity.reason },
-            address:  { url: data.kyc.address.url, status: data.kyc.address.status, reason: data.kyc.address.reason },
-            insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, reason: data.kyc.insurance.reason },
-            bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, reason: data.kyc.bank.reason }
-          } 
+                identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, ...(data.kyc.identity.reason !== undefined && { reason: data.kyc.identity.reason }) },
+                address:  { url: data.kyc.address.url, status: data.kyc.address.status, ...(data.kyc.address.reason !== undefined && { reason: data.kyc.address.reason }) },
+                insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, ...(data.kyc.insurance.reason !== undefined && { reason: data.kyc.insurance.reason }) },
+                bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, ...(data.kyc.bank.reason !== undefined && { reason: data.kyc.bank.reason }) }
+              }
         } as UserProvider;
       }
       setUser(currentUser);
@@ -239,11 +239,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             sunday: data.availability.sunday,
           },
           kyc: {
-            identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, reason: data.kyc.identity.reason },
-            address:  { url: data.kyc.address.url, status: data.kyc.address.status, reason: data.kyc.address.reason },
-            insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, reason: data.kyc.insurance.reason },
-            bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, reason: data.kyc.bank.reason }
-          } 
+                identity: { url: data.kyc.identity.url, status: data.kyc.identity.status, ...(data.kyc.identity.reason !== undefined && { reason: data.kyc.identity.reason }) },
+                address:  { url: data.kyc.address.url, status: data.kyc.address.status, ...(data.kyc.address.reason !== undefined && { reason: data.kyc.address.reason }) },
+                insurance:{ url: data.kyc.insurance.url, status: data.kyc.insurance.status, ...(data.kyc.insurance.reason !== undefined && { reason: data.kyc.insurance.reason }) },
+                bank:     { url: data.kyc.bank.url, status: data.kyc.bank.status, ...(data.kyc.bank.reason !== undefined && { reason: data.kyc.bank.reason }) }
+              }
         } as UserProvider;
       }
       setUser(currentUser);
