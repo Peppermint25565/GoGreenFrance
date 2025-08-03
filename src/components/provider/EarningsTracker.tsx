@@ -119,7 +119,7 @@ const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetS
                   <div className="flex-1">
                     <h4 className="font-medium">{earning.title}</h4>
                     <p className="text-sm text-gray-600">
-                      {earning.clientName} • {earning.createdAt.toDate().toDateString()}
+                      {earning.clientName} • {earning.createdAt.toDate().toLocaleDateString('fr-FR', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}
                     </p>
                   </div>
                   <div className="text-right">

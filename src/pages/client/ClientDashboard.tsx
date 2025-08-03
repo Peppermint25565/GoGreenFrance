@@ -330,7 +330,7 @@ const ClientDashboard = () => {
                             <h3 className="font-medium">{req.title|| "Service"}</h3>
                             <p className="text-sm text-muted-foreground">
                               Créée&nbsp;:{" "}
-                              {new Date(req.createdAt?.seconds ? req.createdAt.seconds * 1000 : req.createdAt).toLocaleDateString()}
+                              {new Date(req.createdAt?.seconds ? req.createdAt.seconds * 1000 : req.createdAt).toLocaleDateString("fr-FR", {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}
                             </p>
                           </div>
                           <span className="text-sm font-semibold">

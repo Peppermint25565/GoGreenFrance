@@ -240,7 +240,7 @@ const MyRequests = () => {
                     </div>
                     <div className="text-left sm:text-right">
                       <div className="text-xl sm:text-2xl font-bold text-green-600">{request.priceOriginal}€</div>
-                      <div className="text-sm text-gray-500">{new Date(request.createdAt?.seconds * 1000 + request.createdAt?.nanoseconds / 1e6).toDateString()}</div>
+                      <div className="text-sm text-gray-500">{new Date(request.createdAt?.seconds * 1000 + request.createdAt?.nanoseconds / 1e6).toLocaleDateString('fr-FR', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}</div>
                     </div>
                   </div>
                 </CardHeader>

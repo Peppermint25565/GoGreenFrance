@@ -107,14 +107,6 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider, setLoa
     }
   };
 
-  const formatDate = (ts: Timestamp) => {
-    return ts.toDate().toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
   return (
     <div className="space-y-6">
       {/* Statistiques */}
@@ -212,7 +204,7 @@ const OrderHistory = ({ onViewDetails, onDownloadInvoice, onRateProvider, setLoa
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
                       <span>Réf: {order.id}</span>
                       {order.providerName && (<span>Prestataire: {order.providerName}</span>)}
-                      <span>Date: {order.createdAt.toDate().toDateString()}</span>
+                      <span>Date: {order.createdAt.toDate().toLocaleDateString('fr-FR', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}</span>
                     </div>
                     <div className="flex items-center gap-4 mt-2">
                       <span className="font-semibold text-green-600">{order.priceFinal ? order.priceFinal : order.priceOriginal}€</span>

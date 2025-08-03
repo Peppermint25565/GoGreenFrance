@@ -99,7 +99,7 @@ const PriceAdjustmentNotification = ({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <Clock className="h-3 w-3 inline mr-1" />
-                    {adjustment.timestamp.toDate().toDateString()}
+                    {adjustment.timestamp.toDate().toLocaleDateString('fr-FR', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}
                   </p>
                 </div>
                 {getStatusBadge(adjustment.status)}

@@ -370,7 +370,7 @@ const ProviderDashboard = () => {
                               </div>
                               <p className="text-gray-600 mb-2">{request.description}</p>
                               <div className="flex items-center gap-4 text-sm text-gray-500">
-                                <span>{request.createdAt.toDate().toDateString()}</span>
+                                <span>{request.createdAt.toDate().toLocaleDateString('fr-FR', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}</span>
                               </div>
                               <div className="mt-2 text-xs text-orange-600">
                                 <Clock className="h-3 w-3 inline mr-1" />
