@@ -8,21 +8,22 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_API_KEY);
 
 export async function pay(adjustment: PriceAdjustment) {
   const stripe2 = await stripePromise;
-  const price = await stripe.prices.create({
-    currency: 'eur',
-    unit_amount: adjustment.newPrice * 100,
-    product_data: {
-      name: adjustment.serviceName
-    }
-  });
-  await stripe2.redirectToCheckout({
-    mode: 'payment',
-    lineItems: [{
-      price: price.id,
-      quantity: 1,
-    }],
-    successUrl: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}`
-  } as RedirectToCheckoutOptions)
+  const checkout = await stripe.checkout.sessions.create({
+    ui_mode: 'custom',
+      mode: 'payment',
+      return_url: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}`,
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            unit_amount: adjustment.newPrice * 100,
+            product_data: { name: adjustment.serviceName },
+          },
+          quantity: 1,
+        },
+      ],
+  } as Stripe.Checkout.SessionCreateParams)
+  await stripe2.redirectToCheckout({sessionId: checkout.id} as RedirectToCheckoutOptions)
 }
 
 export const isPaid = async (checkoutId: string) => {

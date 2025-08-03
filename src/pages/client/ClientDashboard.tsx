@@ -165,6 +165,7 @@ const ClientDashboard = () => {
   }, [user]);
 
   const handleAcceptAdjustment = async (adjustment: PriceAdjustment, feedback?: string) => {
+    setLoading(true)
     pay(adjustment)
   };
 
