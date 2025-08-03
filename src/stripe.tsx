@@ -11,7 +11,7 @@ export async function pay(adjustment: PriceAdjustment) {
   const checkout = await stripe.checkout.sessions.create({
     ui_mode: 'custom',
       mode: 'payment',
-      return_url: `${window.location.protocol}//${window.location.host}/chat?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}`,
+      return_url: `${window.location.protocol}//${window.location.host}/client/dashboard?checkoutId={CHECKOUT_SESSION_ID}&adjustmentId=${adjustment.id}`,
       line_items: [
         {
           price_data: {
