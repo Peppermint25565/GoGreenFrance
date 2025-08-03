@@ -188,7 +188,7 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
       cancelled: { variant: "secondary" as const, label: "Annulé" }
     };
     
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { variant: "outline" as const, label: status };
+    const statusInfo = statusMap[status as keyof typeof statusMap];
     
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
   };
