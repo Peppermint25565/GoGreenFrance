@@ -127,6 +127,24 @@ const MyRequests = () => {
            }
          });
 
+  const translateStatus = (status: string) => {
+    if (status === "pending") {
+      return "En Attente"
+    }
+    if (status === "accepted") {
+      return "Accepté"
+    }
+    if (status === "in_progress") {
+      return "En cours"
+    }
+    if (status === "completed") {
+      return "Fini"
+    }
+    if (status === "cancelled") {
+      return ""
+    }
+  }
+
   return (
     <>
     {loading && (<Loader />)}
@@ -213,7 +231,7 @@ const MyRequests = () => {
                         </Badge>
                         <Badge variant={getStatusColor(request.status)}>
                           {getStatusIcon(request.status)}
-                          {request.status}
+                          {translateStatus(request.status)}
                         </Badge>
                       </div>
                       <CardDescription className="text-sm sm:text-base">
@@ -222,7 +240,7 @@ const MyRequests = () => {
                     </div>
                     <div className="text-left sm:text-right">
                       <div className="text-xl sm:text-2xl font-bold text-green-600">{request.priceOriginal}€</div>
-                      <div className="text-sm text-gray-500">{new Date(request.createdAt?.seconds * 1000 + request.createdAt?.nanoseconds / 1e6).toISOString()}</div>
+                      <div className="text-sm text-gray-500">{new Date(request.createdAt?.seconds * 1000 + request.createdAt?.nanoseconds / 1e6).toDateString()}</div>
                     </div>
                   </div>
                 </CardHeader>

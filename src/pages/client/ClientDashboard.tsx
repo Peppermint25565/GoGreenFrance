@@ -18,6 +18,9 @@ const ClientDashboard = () => {
   const user: UserClient = u as UserClient;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('checkoutId');
+  const adjustmentId = params.get('adjustmentId');
   const [activeRequestsCount, setActiveRequestsCount] = useState(0);
   const [completedServicesCount, setCompletedServicesCount] = useState(0);
   const [averageRating, setAverageRating] = useState<number | string>("–");
@@ -39,14 +42,11 @@ const ClientDashboard = () => {
   }, [])
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('checkoutId');
-    const adjustmentId = params.get('adjustmentId');
     if (!sessionId || !adjustmentId || !isPaid(sessionId)) return;
 
     const fas = async () => {
       try {
-        const adjustment: PriceAdjustment = (await getDoc(doc(db, "priceAdjustement", adjustmentId))).data() as PriceAdjustment
+        const adjustment: PriceAdjustment = (await getDoc(doc(db, "priceAdjustments", adjustmentId))).data() as PriceAdjustment
         const reqRef = doc(db, "requests", adjustment.requestId);
         await updateDoc(reqRef, {
           providerId: adjustment.providerId,
@@ -72,15 +72,6 @@ const ClientDashboard = () => {
             adj.id === adjustment.id ? { ...adj, status: 'accepted' as const } : adj
           )
         );
-        const response = await fetch("/api/checkout-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requestId: adjustment.requestId, amount: adjustment.newPrice })
-        });
-        const data = await response.json();
-        if (data.url) {
-          window.location.href = data.url;
-        }
       } catch (error) {
         console.error("Erreur lors de l'acceptation de l'ajustement :", error);
         toast({
