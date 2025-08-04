@@ -181,12 +181,14 @@ const MissionDetail = ({ mission, onAccept, onDecline, onUpdateStatus }: Mission
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      planifiee: { variant: "outline" as const, label: "Planifiée" },
-      en_cours: { variant: "default" as const, label: "En cours" },
-      terminee: { variant: "secondary" as const, label: "Terminée" }
+      pending: { variant: "outline" as const, label: "Planifiée" },
+      accepted: { variant: "default" as const, label: "Accepté" },
+      in_progress: { variant: "secondary" as const, label: "En cours" },
+      completed: { variant: "secondary" as const, label: "Terminée" },
+      cancelled: { variant: "secondary" as const, label: "Annulé" }
     };
     
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { variant: "outline" as const, label: status };
+    const statusInfo = statusMap[status as keyof typeof statusMap];
     
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
   };
