@@ -82,6 +82,7 @@ const AdminDashboard = () => {
       const docs = (await getDocs(query(collection(db, "profiles")))).docs
       const out = [];
       docs.forEach(user_unit => out.push({id: user_unit.id, ...user_unit.data()} as UserClient | UserProvider));
+      out.sort((a, b) => b.role - a.role);
       setUserList(out)
       setIsLoading(false)
     }
