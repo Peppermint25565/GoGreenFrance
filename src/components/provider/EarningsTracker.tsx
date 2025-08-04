@@ -55,14 +55,16 @@ const EarningsTracker = ({ setLoading }: {setLoading : React.Dispatch<React.SetS
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid":
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Payé</Badge>;
       case "pending":
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">En attente</Badge>;
-      case "processing":
-        return <Badge variant="outline">En traitement</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">En Attente</Badge>;
+      case "accepted":
+        return <Badge variant="outline" className="bg-green-100 text-green-800">Accepté</Badge>;
+      case "in_progress":
+        return <Badge variant="outline" className="bg-orange-100 text-orange-800">En Cours</Badge>;
+      case "completed":
+        return <Badge variant="outline" className="bg-green-100 text-green-800">Fini</Badge>;
+      case "cancelled":
+        return <Badge variant="outline" className="bg-red-100 text-red-800">Annulé</Badge>;
     }
   };
 
