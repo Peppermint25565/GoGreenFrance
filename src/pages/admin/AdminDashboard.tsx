@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useAuth, UserClient } from "@/contexts/AuthContext";
+import { useAuth, UserClient, UserProvider } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { BarChart3, Check, X } from "lucide-react";
 import UserManagement from "@/components/admin/UserManagement";
@@ -24,6 +24,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [providers, setProviders] = useState<any[]>([])
+  const [userlist, setUserList] = useState<any[]>([])
   const [kycProviders, setKycProviders] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
@@ -71,6 +72,17 @@ const AdminDashboard = () => {
         }
       }
       setProviders(out)
+      setIsLoading(false)
+    }
+    fas()
+  }, [])
+
+  useEffect(() => {
+    const fas = async () => {
+      const docs = (await getDocs(query(collection(db, "profiles")))).docs
+      const out = [];
+      docs.forEach(user_unit => out.push({id: user_unit.id, ...user_unit.data()} as UserClient | UserProvider));
+      setUserList(out)
       setIsLoading(false)
     }
     fas()
@@ -222,6 +234,7 @@ const AdminDashboard = () => {
                   {[
                     { id: 'overview', label: "Chiffre prestataire", icon: BarChart3 },
                     { id: 'kyc', label: "Vérifications", icon: BarChart3 },
+                    { id: 'userlist', label: "List des Utilisataurs", icon: BarChart3 },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -273,6 +286,37 @@ const AdminDashboard = () => {
                 </Card>
               </div>
             )}
+
+            {activeTab === 'userlist' && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg sm:text-xl">List des Utilisateurs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {userlist.map((users_unit) => (
+                        <div key={users_unit.id} className="border rounded-lg p-4">
+                          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-base sm:text-lg mb-2">{users_unit.name}</h3>
+                              <div className="space-y-1 text-xs sm:text-sm text-gray-600">
+                                <p>User ID : {users_unit.id}</p>
+                                <p>Email: {users_unit.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                              <p className={`text-1xl font-bold text-${users_unit.role === 0 ? "green" : (users_unit.role === 1 ? "orange" : "red")}-500`}>{users_unit.role === 0 ? "Client" : (users_unit.role === 1 ? "Provider" : "Admin")}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             {activeTab === 'kyc' && (
               <div className="space-y-6">
                 <Card>
